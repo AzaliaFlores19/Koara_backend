@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: koara_db_container
+    environment:
+      POSTGRES_USER: koara_admin
+      POSTGRES_PASSWORD: 1234KB
+      POSTGRES_DB: koara_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:
+
