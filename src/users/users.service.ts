@@ -3,21 +3,22 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  audit_action,
-  entities,
-  Prisma,
-} from '@prisma/client';
+import { audit_action, entities, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './create-user-dto';
 import { UpdateUserDto } from './update-user-dto';
+import { UserResponseDto } from './user-response-dto';
+import type { Users } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createUserDto: CreateUserDto, userId?: string) {
+  async create(
+    createUserDto: CreateUserDto,
+    userId?: string,
+  ): Promise<UserResponseDto> {
     const existingUser = await this.prisma.users.findUnique({
       where: {
         email: createUserDto.email,
@@ -42,16 +43,16 @@ export class UsersService {
     });
 
     await this.createAuditLog(
-  entities.USERS,
-  user.id,
-  audit_action.CREATE,
-  userId ?? user.id,
-);
+      entities.USERS,
+      user.id,
+      audit_action.CREATE,
+      userId ?? user.id,
+    );
 
     return user;
   }
 
-  async findAll() {
+  async findAll(): Promise<UserResponseDto[]> {
     return this.prisma.users.findMany({
       where: {
         is_active: true,
@@ -60,7 +61,7 @@ export class UsersService {
     });
   }
 
-  async findById(id: string) {
+  async findById(id: string): Promise<UserResponseDto> {
     const user = await this.prisma.users.findUnique({
       where: {
         id,
@@ -75,7 +76,11 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto, userId: string) {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    userId: string,
+  ): Promise<UserResponseDto> {
     await this.findById(id);
 
     const data: Prisma.UsersUpdateInput = {
@@ -94,17 +99,12 @@ export class UsersService {
       select: this.userSelectWithoutPassword(),
     });
 
-    await this.createAuditLog(
-      entities.USERS,
-      id,
-      audit_action.UPDATE,
-      userId,
-    );
+    await this.createAuditLog(entities.USERS, id, audit_action.UPDATE, userId);
 
     return updatedUser;
   }
 
-  async deactivate(id: string, userId: string) {
+  async deactivate(id: string, userId: string): Promise<UserResponseDto> {
     await this.findById(id);
 
     const user = await this.prisma.users.update({
@@ -127,7 +127,7 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(email: string) {
+  async findByEmail(email: string): Promise<Users | null> {
     return this.prisma.users.findUnique({
       where: {
         email,

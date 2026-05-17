@@ -16,12 +16,12 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-create(
-  @Body() createUserDto: CreateUserDto,
-  @Headers('x-user-id') userId?: string,
-) {
-  return this.usersService.create(createUserDto, userId);
-}
+  create(
+    @Body() createUserDto: CreateUserDto,
+    @Headers('x-user-id') userId?: string,
+  ) {
+    return this.usersService.create(createUserDto, userId);
+  }
 
   @Get()
   findAll() {
@@ -43,10 +43,7 @@ create(
   }
 
   @Patch(':id/deactivate')
-  deactivate(
-    @Param('id') id: string,
-    @Headers('x-user-id') userId: string,
-  ) {
+  deactivate(@Param('id') id: string, @Headers('x-user-id') userId: string) {
     return this.usersService.deactivate(id, userId);
   }
 }
