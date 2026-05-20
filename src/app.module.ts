@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CaiModule } from './cai/cai.module';
 import { UsersModule } from './users/users.module'; 
 import { AuthModule } from './auth/auth.module';
+import { CaiRangeModule } from './cai_range/cai_range.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AuthModule } from './auth/auth.module';
     CaiModule,
     UsersModule,
     AuthModule,
+    CaiRangeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
