@@ -1,39 +1,3 @@
-import { Controller, Get, Post, Put, Patch, Body, Param, ParseUUIDPipe } from '@nestjs/common';
-import { CaiService } from './cai.service';
-import { CreateCaiDto } from './create-cai-dto';
-import { UpdateCaiDto } from './update-cai-dto';
-@Controller('cai')
-export class CaiController {
-  constructor(private readonly caiService: CaiService) {}
-
-  @Post()
-  create(@Body() createCaiDto: CreateCaiDto) {
-    return this.caiService.create(createCaiDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.caiService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.caiService.findById(id);
-  }
-
-  @Put(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateCaiDto: UpdateCaiDto) {
-    return this.caiService.updateCai(id, updateCaiDto);
-  }
-
-  @Patch(':id/deactivate')
-  deactivate(@Param('id', ParseUUIDPipe) id: string) {
-    return this.caiService.deactivateCai(id);
-  }
-}
-///////////////////////////////////////////////////////////////////////////
-
-
 import { Controller, Get, Post, Patch, Body, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { CaiRangeService } from './cai_range.service';
 import { CreateCaiRangeDto } from './create-cai-range.dto';
