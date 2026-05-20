@@ -11,5 +11,42 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class CaiRangeController {
   constructor(private readonly caiRangeService: CaiRangeService) {}
 
+  @Post()
+  @Roles('ADMIN')
+  create(@Body() createCaiRangeDto: CreateCaiRangeDto) {
+    return this.caiRangeService.createCaiRange(createCaiRangeDto);
+  }
 
+  @Get()
+  @Roles('ADMIN')
+  findAll() {
+    return this.caiRangeService.findAll();
+  }
+
+  @Get('active')
+  @Roles('ADMIN')
+  findActive() {
+    return this.caiRangeService.findActive();
+  }
+
+  @Get(':id')
+  @Roles('ADMIN')
+  findById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.caiRangeService.findById(id);
+  }
+
+  @Patch(':id')
+  @Roles('ADMIN')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateCaiRangeDto: UpdateCaiRangeDto,
+  ) {
+    return this.caiRangeService.updateCaiRange(id, updateCaiRangeDto);
+  }
+
+  @Patch(':id/deactivate')
+  @Roles('ADMIN')
+  deactivate(@Param('id', ParseUUIDPipe) id: string) {
+    return this.caiRangeService.deactivateCaiRange(id);
+  }
 }
