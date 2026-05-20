@@ -5,9 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {
+  constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -21,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
 
     if (!user || !user.is_active) {
-      throw new UnauthorizedException('Usuario no autorizado o inactivo');
+      throw new UnauthorizedException('Usuario no autorizado');
     }
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;

@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -17,7 +21,10 @@ export class AuthService {
     return bcrypt.hash(password, saltRounds);
   }
 
-  async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
+  async comparePassword(
+    password: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
     return bcrypt.compare(password, hashedPassword);
   }
 
@@ -41,7 +48,7 @@ export class AuthService {
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
     if (!user) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Credenciales invalidas');
     }
 
     const payload = {
@@ -50,8 +57,10 @@ export class AuthService {
       role: user.role,
     };
 
+    const access_token = this.jwtService.sign(payload);
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token,
       user,
     };
   }
@@ -62,7 +71,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('El email ya está registrado');
+      throw new ConflictException('El email ya esta registrado');
     }
     const hashedPassword = await this.hashPassword(registerDto.password);
     const newUser = await this.prisma.users.create({
@@ -78,13 +87,15 @@ export class AuthService {
     const { password: _, ...userWithoutPassword } = newUser;
 
     const payload = {
-      sub: newUser.id,
+      id: newUser.id,
       email: newUser.email,
       role: newUser.role,
     };
 
+    const access_token = this.jwtService.sign(payload);
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token,
       user: userWithoutPassword,
     };
   }
