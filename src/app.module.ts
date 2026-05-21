@@ -12,6 +12,7 @@ import { AuditModule } from './audit/audit.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CompanyModule } from './company/company.module';
 import { ProductsModule } from './products/products.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ProductsModule } from './products/products.module';
     CategoriesModule,
     CompanyModule,
     ProductsModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
