@@ -12,4 +12,23 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
+  @Post()
+  @Roles('ADMIN') 
+  create(@Body() createCompanyDto: CreateCompanyDto) {
+    return this.companyService.createCompany(createCompanyDto);
+  }
+
+  @Get()
+  getCompany() {
+    return this.companyService.getCompany();
+  }
+
+  @Patch(':id')
+  @Roles('ADMIN')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateCompanyDto: UpdateCompanyDto,
+  ) {
+    return this.companyService.updateCompany(id, updateCompanyDto);
+  }
 }
