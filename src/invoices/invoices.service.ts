@@ -35,11 +35,11 @@ export class InvoicesService {
     return this.prisma.$transaction(async (tx) => {
       for (const item of dto.items) {
         const product = await tx.products.findUnique({
-          where: { id: item.product_id },
+          where: { id: item.productId },
         });
         if (!product)
           throw new NotFoundException(
-            `Producto ${item.product_id} no encontrado`,
+            `Producto ${item.productId} no encontrado`,
           );
         if (product.stock < item.quantity) {
           throw new BadRequestException(
@@ -49,7 +49,7 @@ export class InvoicesService {
       }
 
       const client = await tx.clients.findUnique({
-        where: { id: dto.client_id },
+        where: { id: dto.customerId },
       });
       if (!client) throw new NotFoundException('Cliente no encontrado');
 
@@ -78,11 +78,11 @@ export class InvoicesService {
       const precalcItems: { item_subtotal: Prisma.Decimal }[] = [];
       for (const item of dto.items) {
         const product = await tx.products.findUnique({
-          where: { id: item.product_id },
+          where: { id: item.productId },
         });
         if (!product) {
           throw new NotFoundException(
-            `Producto ${item.product_id} no encontrado`,
+            `Producto ${item.productId} no encontrado`,
           );
         }
         const item_subtotal = new Prisma.Decimal(
@@ -96,7 +96,7 @@ export class InvoicesService {
         precalcItems.push({ item_subtotal });
       }
 
-      const taxRate = 0.15;
+      const taxRate = dto.taxRate ?? 0.15;
       const { subtotal, taxes, total } = this.calculateTotal(
         precalcItems,
         taxRate,
