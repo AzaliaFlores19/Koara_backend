@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsOptional, IsEmail, Matches } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsEmail,
+  Matches,
+} from 'class-validator';
 
 export class CreateClientDto {
   @IsNotEmpty({ message: 'El nombre del cliente no puede estar vacío.' })
@@ -7,7 +13,9 @@ export class CreateClientDto {
 
   @IsOptional()
   @IsString({ message: 'El RTN debe ser texto.' })
-  @Matches(/^\d{14}$/, { message: 'El RTN debe tener exactamente 14 dígitos numéricos.' })
+  @Matches(/^\d{14}$/, {
+    message: 'El RTN debe tener exactamente 14 dígitos numéricos.',
+  })
   rtn?: string;
 
   @IsOptional()

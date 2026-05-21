@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './create-client.dto';
 import { UpdateClientDto } from './update-client.dto';
@@ -20,32 +29,32 @@ export class ClientsController {
     return this.clientsService.findAll(page ? +page : 1, limit ? +limit : 10);
   }
 
-  @Get(':id')
-  findById(@Param('id', ParseUUIDPipe) id: string) {
+  @Get('/:id')
+  findById(@Param('id') id: string) {
     return this.clientsService.findById(id);
   }
 
-  @Patch(':id')
+  @Patch('/:id')
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() dto: UpdateClientDto,
     @CurrentUser('id') userId: string,
   ) {
     return this.clientsService.update(id, dto, userId);
   }
 
-  @Patch(':id/deactivate')
-  deactivate(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
+  @Patch('/:id/deactivate')
+  deactivate(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.clientsService.deactivate(id, userId);
   }
 
-  @Get(':id/top-products')
-  topProducts(@Param('id', ParseUUIDPipe) id: string) {
+  @Get('/:id/top-products')
+  topProducts(@Param('id') id: string) {
     return this.clientsService.topProducts(id);
   }
 
-  @Get(':id/history')
-  history(@Param('id', ParseUUIDPipe) id: string) {
+  @Get('/:id/history')
+  history(@Param('id') id: string) {
     return this.clientsService.history(id);
   }
 }
