@@ -4,19 +4,19 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { CaiModule } from './cai/cai.module';
-import { UsersModule } from './users/users.module'; 
 import { AuthModule } from './auth/auth.module';
+import { ClientsModule } from './clients/clients.module';
+import { UsersModule } from './users/users.module';
 import { CaiRangeModule } from './cai_range/cai_range.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
-  PrismaModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
     CaiModule,
-    UsersModule,
     AuthModule,
+    ClientsModule,
+    UsersModule,
     CaiRangeModule,
   ],
   controllers: [AppController],
