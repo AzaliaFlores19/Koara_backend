@@ -9,6 +9,7 @@ import { ClientsModule } from './clients/clients.module';
 import { UsersModule } from './users/users.module';
 import { CaiRangeModule } from './cai_range/cai_range.module';
 import { CategoriesModule } from './categories/categories.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CategoriesModule } from './categories/categories.module';
     UsersModule,
     CaiRangeModule,
     CategoriesModule,
+    CompanyModule,
   ],
   controllers: [AppController],
   providers: [AppService],
