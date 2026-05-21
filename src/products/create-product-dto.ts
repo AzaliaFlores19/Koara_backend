@@ -22,7 +22,9 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsString({ message: 'La descripción debe ser texto.' })
-  @MaxLength(200, { message: 'La descripción no puede superar los 200 caracteres.' })
+  @MaxLength(200, {
+    message: 'La descripción no puede superar los 200 caracteres.',
+  })
   description?: string;
 
   @IsString({ message: 'El ID de la categoría debe ser texto.' })

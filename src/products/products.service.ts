@@ -50,8 +50,16 @@ export class ProductsService {
   }
 
   async findAll(filter: ProductFilterDto) {
-    const page = this.parsePositiveInteger(filter.page, 1, 'La página no es válida.');
-    const limit = this.parsePositiveInteger(filter.limit, 10, 'El límite no es válido.');
+    const page = this.parsePositiveInteger(
+      filter.page,
+      1,
+      'La página no es válida.',
+    );
+    const limit = this.parsePositiveInteger(
+      filter.limit,
+      10,
+      'El límite no es válido.',
+    );
     const skip = (page - 1) * limit;
 
     const where: Prisma.ProductsWhereInput = {
@@ -249,7 +257,11 @@ export class ProductsService {
     }
   }
 
-  private parsePositiveInteger(value: string | undefined, defaultValue: number, errorMessage: string) {
+  private parsePositiveInteger(
+    value: string | undefined,
+    defaultValue: number,
+    errorMessage: string,
+  ) {
     if (!value) {
       return defaultValue;
     }
@@ -268,7 +280,12 @@ export class ProductsService {
     entityId: string,
     action: audit_action,
   ) {
-    await this.auditService.createLog(userId, entities.PRODUCTS, entityId, action);
+    await this.auditService.createLog(
+      userId,
+      entities.PRODUCTS,
+      entityId,
+      action,
+    );
   }
 
   private productSelect() {

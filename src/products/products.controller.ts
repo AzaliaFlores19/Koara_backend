@@ -5,7 +5,6 @@ import {
   Param,
   Patch,
   Post,
-  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -41,15 +40,6 @@ export class ProductsController {
   @Get('/:id')
   findById(@Param('id') id: string) {
     return this.productsService.findById(id);
-  }
-
-  @Put('/:id')
-  replace(
-    @Param('id') id: string,
-    @Body() updateProductDto: UpdateProductDto,
-    @CurrentUser('id') userId: string,
-  ) {
-    return this.productsService.update(id, updateProductDto, userId);
   }
 
   @Patch('/:id')
