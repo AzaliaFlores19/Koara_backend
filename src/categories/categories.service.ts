@@ -5,22 +5,30 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import { CreateCategoryDto } from './create-category.dto';
 import { UpdateCategoryDto } from './update-category.dto';
 import { isUUID } from 'class-validator';
+import { entities, audit_action } from '@prisma/client';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
 
   private async createAuditLog(
     user_id: string,
     entity_id: string,
-    action: 'CREATE' | 'UPDATE' | 'DEACTIVATE',
+    action: audit_action,
   ) {
-    await this.prisma.audit_Logs.create({
-      data: { user_id, entity: 'CATEGORY', entity_id, action },
-    });
+    await this.auditService.createLog(
+      user_id,
+      entities.CATEGORY,
+      entity_id,
+      action,
+    );
   }
 
   async create(dto: CreateCategoryDto, user_id: string) {

@@ -28,7 +28,10 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.categoriesService.findAll(page ? +page : 1, limit ? +limit : 10);
+    return this.categoriesService.findAll(
+      page ? +page : 1,
+      limit ? +limit : 10,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

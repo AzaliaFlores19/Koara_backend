@@ -11,6 +11,7 @@ import { CaiRangeModule } from './cai_range/cai_range.module';
 import { AuditModule } from './audit/audit.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CompanyModule } from './company/company.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CompanyModule } from './company/company.module';
     AuditModule,
     CategoriesModule,
     CompanyModule,
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
