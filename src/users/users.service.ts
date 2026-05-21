@@ -10,10 +10,14 @@ import { CreateUserDto } from './create-user-dto';
 import { UpdateUserDto } from './update-user-dto';
 import { UserResponseDto } from './user-response-dto';
 import type { Users } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
   async create(
     createUserDto: CreateUserDto,
@@ -42,11 +46,11 @@ export class UsersService {
       select: this.userSelectWithoutPassword(),
     });
 
-    await this.createAuditLog(
+    await this.auditService.createLog(
+      userId ?? user.id,
       entities.USERS,
       user.id,
       audit_action.CREATE,
-      userId ?? user.id,
     );
 
     return user;
@@ -99,7 +103,12 @@ export class UsersService {
       select: this.userSelectWithoutPassword(),
     });
 
-    await this.createAuditLog(entities.USERS, id, audit_action.UPDATE, userId);
+    await this.auditService.createLog(
+      userId,
+      entities.USERS,
+      id,
+      audit_action.UPDATE,
+    );
 
     return updatedUser;
   }
@@ -117,11 +126,11 @@ export class UsersService {
       select: this.userSelectWithoutPassword(),
     });
 
-    await this.createAuditLog(
+    await this.auditService.createLog(
+      userId,
       entities.USERS,
       id,
       audit_action.DEACTIVATE,
-      userId,
     );
 
     return user;
@@ -145,21 +154,5 @@ export class UsersService {
       is_active: true,
       creation_date: true,
     };
-  }
-
-  private async createAuditLog(
-    entity: entities,
-    entityId: string,
-    action: audit_action,
-    userId: string,
-  ) {
-    await this.prisma.audit_Logs.create({
-      data: {
-        user_id: userId,
-        entity,
-        entity_id: entityId,
-        action,
-      },
-    });
   }
 }

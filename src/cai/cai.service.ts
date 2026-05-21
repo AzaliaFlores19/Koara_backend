@@ -2,24 +2,33 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCaiDto } from './create-cai-dto';
 import { UpdateCaiDto } from './update-cai-dto';
+import { AuditService } from '../audit/audit.service';
+import { audit_action, entities } from '@prisma/client';
 
 @Injectable()
 export class CaiService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
 
-async create(createCaiDto: CreateCaiDto) {
+async create(createCaiDto: CreateCaiDto, userId: string) {
     const existingCai = await this.prisma.cAI.findUnique({
         where: { cai_code: createCaiDto.cai_code },
     });
     if (existingCai) {
         throw new ConflictException('El código CAI ya existe.');
     }
-    return this.prisma.cAI.create({
+    const cai = await this.prisma.cAI.create({
       data: {
         cai_code: createCaiDto.cai_code,
         is_active: true,
       },
     });
+
+    await this.auditService.createLog(userId, entities.CAI, cai.id, audit_action.CREATE);
+
+    return cai;
   }
 
   async findAll() {
@@ -34,7 +43,7 @@ async create(createCaiDto: CreateCaiDto) {
     return cai;
   }
 
-    async updateCai(id: string, dto: UpdateCaiDto) {
+    async updateCai(id: string, dto: UpdateCaiDto, userId: string) {
     await this.findById(id);
 
     if (dto.cai_code) {
@@ -49,18 +58,26 @@ async create(createCaiDto: CreateCaiDto) {
       }
     }
 
-    return this.prisma.cAI.update({
+    const updatedCai = await this.prisma.cAI.update({
       where: { id },
       data: dto,
     });
+
+    await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
+
+    return updatedCai;
   }
 
-  async deactivateCai(id: string) {
+  async deactivateCai(id: string, userId: string) {
     await this.findById(id);
 
-    return this.prisma.cAI.update({
+    const deactivatedCai = await this.prisma.cAI.update({
       where: { id },
       data: { is_active: false },
     });
+
+    await this.auditService.createLog(userId, entities.CAI, id, audit_action.DEACTIVATE);
+
+    return deactivatedCai;
   }
 }

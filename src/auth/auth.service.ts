@@ -8,12 +8,15 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { AuditService } from '../audit/audit.service';
+import { audit_action, entities } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly auditService: AuditService,
   ) {}
 
   async hashPassword(password: string): Promise<string> {
@@ -59,6 +62,13 @@ export class AuthService {
 
     const access_token = this.jwtService.sign(payload);
 
+    await this.auditService.createLog(
+      user.id,
+      entities.USERS,
+      user.id,
+      audit_action.LOGIN,
+    );
+
     return {
       access_token,
       user,
@@ -93,6 +103,13 @@ export class AuthService {
     };
 
     const access_token = this.jwtService.sign(payload);
+
+    await this.auditService.createLog(
+      newUser.id,
+      entities.USERS,
+      newUser.id,
+      audit_action.CREATE,
+    );
 
     return {
       access_token,
