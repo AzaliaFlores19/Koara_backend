@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { ClientsModule } from './clients/clients.module';
 import { UsersModule } from './users/users.module';
 import { CaiRangeModule } from './cai_range/cai_range.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CaiRangeModule } from './cai_range/cai_range.module';
     ClientsModule,
     UsersModule,
     CaiRangeModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],

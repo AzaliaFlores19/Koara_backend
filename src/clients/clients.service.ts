@@ -8,20 +8,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateClientDto } from './create-client.dto';
 import { UpdateClientDto } from './update-client.dto';
 import { isUUID } from 'class-validator';
+import { AuditService } from '../audit/audit.service';
+import { audit_action, entities } from '@prisma/client';
 
 @Injectable()
 export class ClientsService {
-  constructor(private prisma: PrismaService) {}
-
-  private async createAuditLog(
-    user_id: string,
-    entity_id: string,
-    action: 'CREATE' | 'UPDATE' | 'DEACTIVATE',
-  ) {
-    await this.prisma.audit_Logs.create({
-      data: { user_id, entity: 'CLIENTS', entity_id, action },
-    });
-  }
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
 
   async create(dto: CreateClientDto, user_id: string) {
     if (dto.rtn) {
@@ -42,7 +37,12 @@ export class ClientsService {
     }
 
     const client = await this.prisma.clients.create({ data: dto });
-    await this.createAuditLog(user_id, client.id, 'CREATE');
+    await this.auditService.createLog(
+      user_id,
+      entities.CLIENTS,
+      client.id,
+      audit_action.CREATE,
+    );
     return client;
   }
 
@@ -98,7 +98,12 @@ export class ClientsService {
       where: { id },
       data: dto,
     });
-    await this.createAuditLog(user_id, id, 'UPDATE');
+    await this.auditService.createLog(
+      user_id,
+      entities.CLIENTS,
+      id,
+      audit_action.UPDATE,
+    );
     return client;
   }
 
@@ -108,7 +113,12 @@ export class ClientsService {
       where: { id },
       data: { is_active: false },
     });
-    await this.createAuditLog(user_id, id, 'DEACTIVATE');
+    await this.auditService.createLog(
+      user_id,
+      entities.CLIENTS,
+      id,
+      audit_action.DEACTIVATE,
+    );
     return client;
   }
 

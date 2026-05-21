@@ -2,12 +2,17 @@ import { Injectable, ConflictException, NotFoundException, BadRequestException }
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCaiRangeDto } from './create-cai-range.dto';
 import { UpdateCaiRangeDto } from './update-cai-range.dto';
+import { AuditService } from '../audit/audit.service';
+import { audit_action, entities } from '@prisma/client';
 
 @Injectable()
 export class CaiRangeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
 
-  async createCaiRange(dto: CreateCaiRangeDto) {
+  async createCaiRange(dto: CreateCaiRangeDto, userId: string) {
     const existingCai = await this.prisma.cAI.findUnique({ where: { id: dto.cai_id } });
     if (!existingCai) {
       throw new NotFoundException('El CAI asociado no existe.');
@@ -30,13 +35,17 @@ export class CaiRangeService {
 
     await this.validateOverlapping(dto.base_code, dto.range_start, dto.range_end);
 
-    return this.prisma.cAI_Range.create({
+    const caiRange = await this.prisma.cAI_Range.create({
       data: {
         ...dto,
         current_invoice_number: dto.range_start,
         is_active: true,
       },
     });
+
+    await this.auditService.createLog(userId, entities.CAI_RANGE, caiRange.id, audit_action.CREATE);
+
+    return caiRange;
   }
 
   async findAll() {
@@ -63,7 +72,7 @@ export class CaiRangeService {
     return activeRanges;
   }
 
-  async updateCaiRange(id: string, dto: UpdateCaiRangeDto) {
+  async updateCaiRange(id: string, dto: UpdateCaiRangeDto, userId: string) {
 
     const currentRange = await this.findById(id);
     const updateRange ={ ...currentRange, ...dto };
@@ -88,18 +97,26 @@ export class CaiRangeService {
       }
     }
 
-    return this.prisma.cAI_Range.update({
+    const updatedCaiRange = await this.prisma.cAI_Range.update({
       where: { id },
       data: dto,
     });
+
+    await this.auditService.createLog(userId, entities.CAI_RANGE, id, audit_action.UPDATE);
+
+    return updatedCaiRange;
   }
 
-  async deactivateCaiRange(id: string) {
+  async deactivateCaiRange(id: string, userId: string) {
     await this.findById(id);
-    return this.prisma.cAI_Range.update({
+    const deactivatedCaiRange = await this.prisma.cAI_Range.update({
       where: { id },
       data: { is_active: false },
     });
+
+    await this.auditService.createLog(userId, entities.CAI_RANGE, id, audit_action.DEACTIVATE);
+
+    return deactivatedCaiRange;
   }
 
     private async validateOverlapping (baseCode: string, newStart: number, newEnd: number, currentId?: string) {
