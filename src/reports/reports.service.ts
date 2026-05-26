@@ -17,13 +17,14 @@ export class ReportsService {
       select: {
         created_at: true,
         total: true,
+        taxes: true,
       },
       orderBy: { created_at: 'asc' },
     });
 
     const dailyMap = new Map<
       string,
-      { date: string; total_sales: number; invoice_count: number }
+      { date: string; total_sales: number; invoice_count: number; total_tax: number }
     >();
 
     for (const invoice of invoices) {
@@ -32,16 +33,73 @@ export class ReportsService {
       if (entry) {
         entry.total_sales += invoice.total.toNumber();
         entry.invoice_count += 1;
+        entry.total_tax += invoice.taxes.toNumber();
       } else {
         dailyMap.set(day, {
           date: day,
           total_sales: invoice.total.toNumber(),
           invoice_count: 1,
+          total_tax: invoice.taxes.toNumber(),
         });
       }
     }
 
     return Array.from(dailyMap.values());
+  }
+
+  async getSalesList(startDate: string, endDate: string) {
+    return this.prisma.invoices.findMany({
+      where: {
+        created_at: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      },
+      select: {
+        id: true,
+        invoice_number: true,
+        client_name: true,
+        total: true,
+        created_at: true,
+      },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async getSalesOverview(startDate: string, endDate: string) {
+    const invoices = await this.prisma.invoices.findMany({
+      where: {
+        created_at: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      },
+      select: {
+        client_id: true,
+        subtotal: true,
+        total: true,
+      },
+    });
+
+    const total_invoices = invoices.length;
+    const total_before_tax = invoices.reduce(
+      (sum, inv) => sum + inv.subtotal.toNumber(),
+      0,
+    );
+    const total_after_tax = invoices.reduce(
+      (sum, inv) => sum + inv.total.toNumber(),
+      0,
+    );
+    const unique_clients = new Set(
+      invoices.map((inv) => inv.client_id).filter(Boolean),
+    ).size;
+
+    return {
+      total_invoices,
+      total_before_tax,
+      total_after_tax,
+      unique_clients,
+    };
   }
 
   async getTopSellingProducts(
@@ -58,7 +116,7 @@ export class ReportsService {
           },
         },
       },
-      _sum: { quantity: true },
+      _sum: { quantity: true, item_subtotal: true },
       orderBy: { _sum: { quantity: 'desc' } },
       take: limit,
     });
@@ -69,7 +127,12 @@ export class ReportsService {
 
     const products = await this.prisma.products.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, name: true, code_bar: true, price: true },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        category: { select: { name: true } },
+      },
     });
 
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -77,6 +140,7 @@ export class ReportsService {
     return grouped.map((g) => ({
       product: productMap.get(g.product_id!),
       total_quantity_sold: g._sum.quantity ?? 0,
+      revenue: g._sum.item_subtotal?.toNumber() ?? 0,
     }));
   }
 
@@ -85,6 +149,7 @@ export class ReportsService {
       by: ['client_id'],
       _count: { id: true },
       _sum: { total: true },
+      _max: { created_at: true },
       orderBy: [{ _count: { id: 'desc' } }, { _sum: { total: 'desc' } }],
       take: limit,
     });
@@ -104,6 +169,7 @@ export class ReportsService {
       client: clientMap.get(g.client_id!),
       invoice_count: g._count.id,
       total_spent: g._sum.total?.toNumber() ?? 0,
+      last_purchase: g._max.created_at,
     }));
   }
 
