@@ -169,6 +169,47 @@ export class ProductsService {
     return product;
   }
 
+  async updateGlobalStockThreshold(minStock: number, userId: string) {
+    const products = await this.prisma.products.findMany({
+      where: { is_active: true },
+      select: { id: true },
+    });
+
+    const updatedProducts = await this.prisma.products.updateMany({
+      where: { is_active: true },
+      data: { min_stock: minStock },
+    });
+
+    await Promise.all(
+      products.map((product) =>
+        this.createAuditLog(userId, product.id, audit_action.UPDATE),
+      ),
+    );
+
+    return {
+      min_stock: minStock,
+      updated: updatedProducts.count,
+    };
+  }
+
+  async updateProductStockThreshold(
+    id: string,
+    minStock: number,
+    userId: string,
+  ): Promise<ProductResponseDto> {
+    await this.findById(id);
+
+    const product = await this.prisma.products.update({
+      where: { id },
+      data: { min_stock: minStock },
+      select: this.productSelect(),
+    });
+
+    await this.createAuditLog(userId, id, audit_action.UPDATE);
+
+    return product;
+  }
+
   async decreaseStock(
     id: string,
     quantity: number,

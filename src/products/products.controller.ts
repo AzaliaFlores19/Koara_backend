@@ -13,6 +13,7 @@ import { CreateProductDto } from './create-product-dto';
 import { UpdateProductDto } from './update-product-dto';
 import { ProductFilterDto } from './product-filter-dto';
 import { StockDto } from './stock-dto';
+import { StockThresholdDto } from './stock-threshold-dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -42,6 +43,17 @@ export class ProductsController {
     return this.productsService.findById(id);
   }
 
+  @Patch('/stock-threshold/global')
+  updateGlobalStockThreshold(
+    @Body() stockThresholdDto: StockThresholdDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.productsService.updateGlobalStockThreshold(
+      stockThresholdDto.min_stock,
+      userId,
+    );
+  }
+
   @Patch('/:id')
   update(
     @Param('id') id: string,
@@ -54,6 +66,19 @@ export class ProductsController {
   @Patch('/:id/deactivate')
   deactivate(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.productsService.deactivate(id, userId);
+  }
+
+  @Patch('/:id/stock-threshold')
+  updateProductStockThreshold(
+    @Param('id') id: string,
+    @Body() stockThresholdDto: StockThresholdDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.productsService.updateProductStockThreshold(
+      id,
+      stockThresholdDto.min_stock,
+      userId,
+    );
   }
 
   @Patch('/:id/decrease-stock')
