@@ -17,7 +17,7 @@ export class InvoiceItemsService {
 
   async createItems(
     invoiceId: string,
-    items: { product_id: string; quantity: number }[],
+    items: { productId: string; quantity: number }[],
     userId: string,
     tx: Prisma.TransactionClient = this.prisma,
   ) {
@@ -25,12 +25,12 @@ export class InvoiceItemsService {
 
     for (const item of items) {
       const product = await tx.products.findUnique({
-        where: { id: item.product_id },
+        where: { id: item.productId },
       });
 
       if (!product) {
         throw new BadRequestException(
-          `Producto con ID ${item.product_id} no encontrado`,
+          `Producto con ID ${item.productId} no encontrado`,
         );
       }
 
@@ -48,7 +48,7 @@ export class InvoiceItemsService {
       const invoiceProduct = await tx.invoice_Product.create({
         data: {
           invoice_id: invoiceId,
-          product_id: item.product_id,
+          product_id: item.productId,
           quantity: item.quantity,
           unit_price: unit_price,
           item_subtotal: item_subtotal,

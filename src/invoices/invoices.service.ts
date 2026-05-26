@@ -33,41 +33,25 @@ export class InvoicesService {
 
   async createInvoice(dto: CreateInvoiceDto, userId: string) {
     return this.prisma.$transaction(async (tx) => {
-      for (const item of dto.items) {
-        const product = await tx.products.findUnique({
-          where: { id: item.product_id },
-        });
-        if (!product)
-          throw new NotFoundException(
-            `Producto ${item.product_id} no encontrado`,
-          );
-        if (product.stock < item.quantity) {
-          throw new BadRequestException(
-            `Stock insuficiente para el producto ${product.name}`,
-          );
-        }
-      }
-
       const client = await tx.clients.findUnique({
-        where: { id: dto.client_id },
+        where: { id: dto.customerId },
       });
       if (!client) throw new NotFoundException('Cliente no encontrado');
 
-      const currentDate = new Date();
-      const caiRanges = await tx.cAI_Range.findMany({
-        where: {
-          is_active: true,
-          expiration_date: { gt: currentDate },
-        },
+      const caiRange = await tx.cAI_Range.findUnique({
+        where: { id: dto.caiRangeId },
       });
-
-      const caiRange = caiRanges.find(
-        (r) => r.current_invoice_number <= r.range_end,
-      );
       if (!caiRange) {
-        throw new BadRequestException(
-          'No hay un Rango CAI activo disponible o todos han expirado/alcanzado su límite',
-        );
+        throw new NotFoundException('Rango CAI no encontrado');
+      }
+      if (!caiRange.is_active) {
+        throw new BadRequestException('El Rango CAI seleccionado no está activo');
+      }
+      if (caiRange.current_invoice_number > caiRange.range_end) {
+        throw new BadRequestException('El Rango CAI ha alcanzado su límite de facturas');
+      }
+      if (new Date() > new Date(caiRange.expiration_date)) {
+        throw new BadRequestException('El Rango CAI ha expirado');
       }
 
       const invoice_number = this.generateInvoiceNumber(
@@ -78,11 +62,16 @@ export class InvoicesService {
       const precalcItems: { item_subtotal: Prisma.Decimal }[] = [];
       for (const item of dto.items) {
         const product = await tx.products.findUnique({
-          where: { id: item.product_id },
+          where: { id: item.productId },
         });
         if (!product) {
           throw new NotFoundException(
-            `Producto ${item.product_id} no encontrado`,
+            `Producto ${item.productId} no encontrado`,
+          );
+        }
+        if (product.stock < item.quantity) {
+          throw new BadRequestException(
+            `Stock insuficiente para el producto ${product.name}`,
           );
         }
         const item_subtotal = new Prisma.Decimal(
@@ -96,7 +85,7 @@ export class InvoicesService {
         precalcItems.push({ item_subtotal });
       }
 
-      const taxRate = 0.15;
+      const taxRate = dto.taxRate ?? 0.15;
       const { subtotal, taxes, total } = this.calculateTotal(
         precalcItems,
         taxRate,
@@ -129,7 +118,7 @@ export class InvoicesService {
       await tx.cAI_Range.update({
         where: { id: caiRange.id },
         data: {
-          current_invoice_number: caiRange.current_invoice_number + 1,
+          current_invoice_number: { increment: 1 },
         },
       });
 
@@ -145,6 +134,34 @@ export class InvoicesService {
   }
 
   async findAll(filters: {
+    customerId?: string;
+    cashierId?: string;
+    issuedAtStart?: string;
+    issuedAtEnd?: string;
+  }) {
+    const where: Prisma.InvoicesWhereInput = {};
+
+    if (filters.customerId) {
+      where.client_id = filters.customerId;
+    }
+    if (filters.cashierId) {
+      where.user_id = filters.cashierId;
+    }
+    if (filters.issuedAtStart || filters.issuedAtEnd) {
+      where.created_at = {};
+      if (filters.issuedAtStart)
+        where.created_at.gte = new Date(filters.issuedAtStart);
+      if (filters.issuedAtEnd)
+        where.created_at.lte = new Date(filters.issuedAtEnd);
+    }
+
+    return this.prisma.invoices.findMany({
+      where,
+      include: { client: true, user: true },
+    });
+  }
+
+  async findActive(filters: {
     customerId?: string;
     cashierId?: string;
     issuedAtStart?: string;

@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCaiRangeDto } from './create-cai-range.dto';
 import { UpdateCaiRangeDto } from './update-cai-range.dto';
@@ -13,27 +18,39 @@ export class CaiRangeService {
   ) {}
 
   async createCaiRange(dto: CreateCaiRangeDto, userId: string) {
-    const existingCai = await this.prisma.cAI.findUnique({ where: { id: dto.cai_id } });
+    const existingCai = await this.prisma.cAI.findUnique({
+      where: { id: dto.cai_id },
+    });
     if (!existingCai) {
       throw new NotFoundException('El CAI asociado no existe.');
     }
 
     if (dto.range_start >= dto.range_end) {
-      throw new BadRequestException('El rango inicial debe ser menor que el rango final');
+      throw new BadRequestException(
+        'El rango inicial debe ser menor que el rango final',
+      );
     }
 
     if (new Date(dto.expiration_date) <= new Date()) {
-      throw new BadRequestException('La fecha de expiración debe ser una fecha futura.');
+      throw new BadRequestException(
+        'La fecha de expiración debe ser una fecha futura.',
+      );
     }
 
     const activeRange = await this.prisma.cAI_Range.findFirst({
       where: { cai_id: dto.cai_id, is_active: true },
     });
     if (activeRange) {
-      throw new ConflictException('Ya existe un rango activo para este CAI. Desactívalo antes de crear uno nuevo.');
+      throw new ConflictException(
+        'Ya existe un rango activo para este CAI. Desactívalo antes de crear uno nuevo.',
+      );
     }
 
-    await this.validateOverlapping(dto.base_code, dto.range_start, dto.range_end);
+    await this.validateOverlapping(
+      dto.base_code,
+      dto.range_start,
+      dto.range_end,
+    );
 
     const caiRange = await this.prisma.cAI_Range.create({
       data: {
@@ -43,14 +60,19 @@ export class CaiRangeService {
       },
     });
 
-    await this.auditService.createLog(userId, entities.CAI_RANGE, caiRange.id, audit_action.CREATE);
+    await this.auditService.createLog(
+      userId,
+      entities.CAI_RANGE,
+      caiRange.id,
+      audit_action.CREATE,
+    );
 
     return caiRange;
   }
 
   async findAll() {
     return this.prisma.cAI_Range.findMany({
-      include: { cai: true }, 
+      include: { cai: true },
       orderBy: { created_at: 'desc' },
     });
   }
@@ -73,15 +95,16 @@ export class CaiRangeService {
   }
 
   async updateCaiRange(id: string, dto: UpdateCaiRangeDto, userId: string) {
-
     const currentRange = await this.findById(id);
-    const updateRange ={ ...currentRange, ...dto };
-    const start=updateRange.range_start;
-    const end=updateRange.range_end;
-    const baseCode=updateRange.base_code;
+    const updateRange = { ...currentRange, ...dto };
+    const start = updateRange.range_start;
+    const end = updateRange.range_end;
+    const baseCode = updateRange.base_code;
 
     if (start >= end) {
-      throw new BadRequestException('El rango inicial debe ser menor que el rango final.');
+      throw new BadRequestException(
+        'El rango inicial debe ser menor que el rango final.',
+      );
     }
 
     if (dto.range_start || dto.range_end || dto.base_code) {
@@ -90,10 +113,16 @@ export class CaiRangeService {
 
     if (dto.is_active === true && !currentRange.is_active) {
       const activeRange = await this.prisma.cAI_Range.findFirst({
-        where: { cai_id: currentRange.cai_id, is_active: true, id: { not: id } },
+        where: {
+          cai_id: currentRange.cai_id,
+          is_active: true,
+          id: { not: id },
+        },
       });
       if (activeRange) {
-        throw new ConflictException('Ya existe otro rango activo para este CAI.');
+        throw new ConflictException(
+          'Ya existe otro rango activo para este CAI.',
+        );
       }
     }
 
@@ -102,7 +131,12 @@ export class CaiRangeService {
       data: dto,
     });
 
-    await this.auditService.createLog(userId, entities.CAI_RANGE, id, audit_action.UPDATE);
+    await this.auditService.createLog(
+      userId,
+      entities.CAI_RANGE,
+      id,
+      audit_action.UPDATE,
+    );
 
     return updatedCaiRange;
   }
@@ -114,29 +148,40 @@ export class CaiRangeService {
       data: { is_active: false },
     });
 
-    await this.auditService.createLog(userId, entities.CAI_RANGE, id, audit_action.DEACTIVATE);
+    await this.auditService.createLog(
+      userId,
+      entities.CAI_RANGE,
+      id,
+      audit_action.DEACTIVATE,
+    );
 
     return deactivatedCaiRange;
   }
 
-    private async validateOverlapping (baseCode: string, newStart: number, newEnd: number, currentId?: string) {
+  private async validateOverlapping(
+    baseCode: string,
+    newStart: number,
+    newEnd: number,
+    currentId?: string,
+  ) {
     const existingRanges = await this.prisma.cAI_Range.findMany({
-        where: { 
-        base_code: baseCode 
-        },
+      where: {
+        base_code: baseCode,
+      },
     });
 
     for (const range of existingRanges) {
-        if (currentId && range.id === currentId) {
+      if (currentId && range.id === currentId) {
         continue;
-        }
+      }
 
-        const doesOverlap = newStart <= range.range_end && newEnd >= range.range_start;
-        if (doesOverlap) {
+      const doesOverlap =
+        newStart <= range.range_end && newEnd >= range.range_start;
+      if (doesOverlap) {
         throw new ConflictException(
-            `Conflicto de numeración: Los números del rango se superponen con un rango existente  (${range.range_start} - ${range.range_end}).`
+          `Conflicto de numeración: Los números del rango se superponen con un rango existente  (${range.range_start} - ${range.range_end}).`,
         );
-        }
+      }
     }
-    }
+  }
 }
