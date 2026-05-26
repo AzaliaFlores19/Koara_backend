@@ -50,6 +50,7 @@ export class ClientsService {
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.clients.findMany({
+        where: { is_active: true },
         skip,
         take: limit,
         orderBy: { created_at: 'desc' },

@@ -47,6 +47,7 @@ export class CategoriesService {
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.categories.findMany({
+        where: { is_active: true },
         skip,
         take: limit,
         orderBy: { created_at: 'desc' },

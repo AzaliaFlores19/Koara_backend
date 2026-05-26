@@ -1,20 +1,32 @@
-import { Controller, Get, Post, Patch, Body, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  ParseUUIDPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { CaiRangeService } from './cai_range.service';
 import { CreateCaiRangeDto } from './create-cai-range.dto';
-import { UpdateCaiRangeDto } from './update-cai-range.dto'; 
+import { UpdateCaiRangeDto } from './update-cai-range.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('cai-ranges')
-@UseGuards(JwtAuthGuard, RolesGuard) 
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CaiRangeController {
   constructor(private readonly caiRangeService: CaiRangeService) {}
 
   @Post()
   @Roles('ADMIN')
-  create(@Body() createCaiRangeDto: CreateCaiRangeDto, @CurrentUser('id') userId: string) {
+  create(
+    @Body() createCaiRangeDto: CreateCaiRangeDto,
+    @CurrentUser('id') userId: string,
+  ) {
     return this.caiRangeService.createCaiRange(createCaiRangeDto, userId);
   }
 
@@ -24,19 +36,19 @@ export class CaiRangeController {
     return this.caiRangeService.findAll();
   }
 
-  @Get('active')
+  @Get('/active')
   @Roles('ADMIN')
   findActive() {
     return this.caiRangeService.findActive();
   }
 
-  @Get(':id')
+  @Get('/:id')
   @Roles('ADMIN')
   findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.caiRangeService.findById(id);
   }
 
-  @Patch(':id')
+  @Patch('/:id')
   @Roles('ADMIN')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -46,9 +58,12 @@ export class CaiRangeController {
     return this.caiRangeService.updateCaiRange(id, updateCaiRangeDto, userId);
   }
 
-  @Patch(':id/deactivate')
+  @Patch('/:id/deactivate')
   @Roles('ADMIN')
-  deactivate(@Param('id', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
+  deactivate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') userId: string,
+  ) {
     return this.caiRangeService.deactivateCaiRange(id, userId);
   }
 }

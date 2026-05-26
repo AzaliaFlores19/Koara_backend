@@ -10,7 +10,7 @@ export class InvoiceItemResponseDto {
 export class InvoiceResponseDto {
   id: string;
   invoiceNumber: string;
-  customerId: string;
+  userId: string;
   cashierId: string;
   items: InvoiceItemResponseDto[];
   subtotal: number;
