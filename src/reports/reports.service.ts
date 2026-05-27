@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { isUUID } from 'class-validator';
 
@@ -24,7 +28,12 @@ export class ReportsService {
 
     const dailyMap = new Map<
       string,
-      { date: string; total_sales: number; invoice_count: number; total_tax: number }
+      {
+        date: string;
+        total_sales: number;
+        invoice_count: number;
+        total_tax: number;
+      }
     >();
 
     for (const invoice of invoices) {
@@ -47,17 +56,23 @@ export class ReportsService {
     return Array.from(dailyMap.values());
   }
 
-  async getSalesList(startDate: string, endDate: string) {
+  async getSalesList(startDate: string, endDate: string, clientId?: string) {
+    if (clientId && !isUUID(clientId)) {
+      throw new BadRequestException('ID de cliente no valido');
+    }
+
     return this.prisma.invoices.findMany({
       where: {
         created_at: {
           gte: new Date(startDate),
           lte: new Date(endDate),
         },
+        ...(clientId ? { client_id: clientId } : {}),
       },
       select: {
         id: true,
         invoice_number: true,
+        client_id: true,
         client_name: true,
         total: true,
         created_at: true,
@@ -144,9 +159,21 @@ export class ReportsService {
     }));
   }
 
-  async getFrequentCustomers(limit: number) {
+  async getFrequentCustomers(
+    limit: number,
+    range?: { startDate?: string; endDate?: string },
+  ) {
     const grouped = await this.prisma.invoices.groupBy({
       by: ['client_id'],
+      where:
+        range?.startDate && range?.endDate
+          ? {
+              created_at: {
+                gte: new Date(range.startDate),
+                lte: new Date(range.endDate),
+              },
+            }
+          : undefined,
       _count: { id: true },
       _sum: { total: true },
       _max: { created_at: true },
@@ -154,9 +181,7 @@ export class ReportsService {
       take: limit,
     });
 
-    const clientIds = grouped
-      .map((g) => g.client_id)
-      .filter(Boolean) as string[];
+    const clientIds = grouped.map((g) => g.client_id).filter(Boolean);
 
     const clients = await this.prisma.clients.findMany({
       where: { id: { in: clientIds } },
@@ -166,7 +191,7 @@ export class ReportsService {
     const clientMap = new Map(clients.map((c) => [c.id, c]));
 
     return grouped.map((g) => ({
-      client: clientMap.get(g.client_id!),
+      client: clientMap.get(g.client_id),
       invoice_count: g._count.id,
       total_spent: g._sum.total?.toNumber() ?? 0,
       last_purchase: g._max.created_at,
