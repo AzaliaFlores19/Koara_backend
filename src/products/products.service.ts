@@ -314,6 +314,7 @@ export class ProductsService {
   async findLowStockProducts() {
     const products = await this.prisma.products.findMany({
       where: { is_active: true },
+      orderBy: { stock: 'asc' },
       select: {
         id: true,
         name: true,
