@@ -37,6 +37,11 @@ export class ProductsController {
     return this.productsService.findAll(filter);
   }
 
+  @Get('/low-stock')
+  findLowStockProducts() {
+    return this.productsService.findLowStockProducts();
+  }
+
   @Get('/:id')
   findById(@Param('id') id: string) {
     return this.productsService.findById(id);
