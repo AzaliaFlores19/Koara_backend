@@ -7,6 +7,8 @@ import {
   Query,
   UseGuards,
   Req,
+  Header,
+  StreamableFile,
 } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -19,12 +21,24 @@ export class InvoicesController {
 
   @Post()
   async create(@Body() dto: CreateInvoiceDto, @Req() req) {
-    const invoice = await this.invoicesService.createInvoice(
-      dto,
-      req.user.id,
-    );
+    const invoice = await this.invoicesService.createInvoice(dto, req.user.id);
     const fullInvoice = await this.invoicesService.findById(invoice.id);
     return fullInvoice;
+  }
+
+  @Post('preview')
+  @Header('Content-Type', 'application/pdf')
+  @Header('Content-Disposition', 'inline; filename="preview.pdf"')
+  async preview(
+    @Body() dto: CreateInvoiceDto,
+    @Req() req,
+  ): Promise<StreamableFile> {
+    const buffer = (await this.invoicesService.createInvoice(
+      dto,
+      req.user.id,
+      true,
+    )) as Buffer;
+    return new StreamableFile(buffer);
   }
 
   @Get()
