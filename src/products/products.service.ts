@@ -310,4 +310,19 @@ export class ProductsService {
       },
     };
   }
+
+  async findLowStockProducts() {
+    const products = await this.prisma.products.findMany({
+      where: { is_active: true },
+      select: {
+        id: true,
+        name: true,
+        stock: true,
+        min_stock: true,
+      },
+    });
+    return products.filter((p) => p.stock <= p.min_stock);
+  }
+  
 }
+
