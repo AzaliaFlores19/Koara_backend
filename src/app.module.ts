@@ -14,6 +14,7 @@ import { CompanyModule } from './company/company.module';
 import { ProductsModule } from './products/products.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ReportsModule } from './reports/reports.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ReportsModule } from './reports/reports.module';
     ProductsModule,
     InvoicesModule,
     ReportsModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
