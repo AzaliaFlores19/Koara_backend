@@ -22,6 +22,9 @@ export class InvoicesController {
   @Post()
   async create(@Body() dto: CreateInvoiceDto, @Req() req) {
     const invoice = await this.invoicesService.createInvoice(dto, req.user.id);
+    if (Buffer.isBuffer(invoice)) {
+      throw new Error('Expected invoice object, but got Buffer');
+    }
     const fullInvoice = await this.invoicesService.findById(invoice.id);
     return fullInvoice;
   }

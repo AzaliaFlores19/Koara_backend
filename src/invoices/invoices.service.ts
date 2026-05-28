@@ -276,24 +276,24 @@ export class InvoicesService {
         resolve(Buffer.concat(buffers));
       });
       doc.on('error', reject);
-      doc.fontSize(20).text('INVOICE PREVIEW', { align: 'center' }).moveDown();
+      doc.fontSize(20).text('FACTURA PREVIEW', { align: 'center' }).moveDown();
       doc
         .fontSize(12)
-        .text(`Invoice Number: ${data.invoice_number}`)
-        .text(`Date: ${data.date.toLocaleDateString()}`)
+        .text(`No. Factura: ${data.invoice_number}`)
+        .text(`Fecha: ${data.date.toLocaleDateString()}`)
         .moveDown();
       doc
-        .text('Client Information:')
-        .text(`Name: ${data.client.name}`)
+        .text('Informacion Cliente:')
+        .text(`Nombre: ${data.client.name}`)
         .text(`RTN: ${data.client.rtn}`)
-        .text(`Phone: ${data.client.phone}`)
+        .text(`Telefono: ${data.client.phone}`)
         .text(`Email: ${data.client.email}`)
         .moveDown();
       const tableTop = doc.y;
       doc.font('Helvetica-Bold');
-      doc.text('Product', 50, tableTop);
-      doc.text('Qty', 300, tableTop);
-      doc.text('Price', 380, tableTop);
+      doc.text('Producto', 50, tableTop);
+      doc.text('Cantidad', 300, tableTop);
+      doc.text('Precio', 380, tableTop);
       doc.text('Subtotal', 460, tableTop);
       doc.font('Helvetica');
 
@@ -325,7 +325,7 @@ export class InvoicesService {
       yPosition += 20;
 
       doc.font('Helvetica-Bold');
-      doc.text('Taxes:', totalsX, yPosition);
+      doc.text('ISV:', totalsX, yPosition);
       doc.font('Helvetica').text(`$${data.taxes.toFixed(2)}`, 460, yPosition);
       yPosition += 20;
 
