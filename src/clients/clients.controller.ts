@@ -29,6 +29,14 @@ export class ClientsController {
     return this.clientsService.findAll(page ? +page : 1, limit ? +limit : 10);
   }
 
+  @Get('/unique-clients')
+  getTotalUniqueClientsByDate(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.clientsService.getTotalUniqueClientsByDate(startDate, endDate);
+  }
+
   @Get('/:id')
   findById(@Param('id') id: string) {
     return this.clientsService.findById(id);
