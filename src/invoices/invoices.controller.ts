@@ -29,7 +29,7 @@ export class InvoicesController {
     return fullInvoice;
   }
 
-  @Post('preview')
+  @Post('/preview')
   @Header('Content-Type', 'application/pdf')
   @Header('Content-Disposition', 'inline; filename="preview.pdf"')
   async preview(
@@ -50,13 +50,21 @@ export class InvoicesController {
     return invoices;
   }
 
-  @Get('active')
+  @Get('/active')
   async findActive(@Query() filters: any) {
     const invoices = await this.invoicesService.findActive(filters);
     return invoices;
   }
 
-  @Get(':id')
+  @Get('/total-invoices')
+  async getTotalSalesByDateRange(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.invoicesService.getTotalSalesByDateRange(startDate, endDate);
+  }
+
+  @Get('/:id')
   async findById(@Param('id') id: string) {
     const invoice = await this.invoicesService.findById(id);
     return invoice;

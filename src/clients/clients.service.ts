@@ -9,7 +9,7 @@ import { CreateClientDto } from './create-client.dto';
 import { UpdateClientDto } from './update-client.dto';
 import { isUUID } from 'class-validator';
 import { AuditService } from '../audit/audit.service';
-import { audit_action, entities } from '@prisma/client';
+import { audit_action, entities, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ClientsService {
@@ -58,6 +58,16 @@ export class ClientsService {
       this.prisma.clients.count(),
     ]);
     return { data, total, page, limit };
+  }
+
+  async getTotalUniqueClientsByDate(startDate: string, endDate: string) {
+    const count = await this.prisma.clients.count({ where: {
+        created_at: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      } });
+    return { total_clients: count };
   }
 
   async findById(id: string) {

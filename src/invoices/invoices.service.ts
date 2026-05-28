@@ -214,6 +214,32 @@ export class InvoicesService {
     });
   }
 
+  async getTotalSalesByDateRange(startDate: string, endDate: string) {
+    const aggregations = await this.prisma.invoices.aggregate({
+      where: {
+        created_at: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        subtotal: true,
+        taxes: true,
+        total: true,
+      },
+    });
+
+    return {
+      total_sales_before_taxes: aggregations._sum.subtotal,
+      total_taxes: aggregations._sum.taxes,
+      total_sales_after_taxes: aggregations._sum.total,
+      total_invoices: aggregations._count.id,
+    };
+  }
+
   async findById(id: string) {
     const invoice = await this.prisma.invoices.findUnique({
       where: { id },
