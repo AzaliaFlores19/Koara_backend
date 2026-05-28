@@ -53,6 +53,7 @@ model Users {
   
   invoices      Invoices[]
   audit_logs    Audit_Logs[]
+  password_reset_tokens PasswordResetToken[]
 }
 
 model Products {
@@ -176,4 +177,19 @@ model Company {
   email      String?
   logo       String?  @db.Text
   created_at DateTime @default(now()) @db.Timestamptz
+}
+
+model PasswordResetToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  user_id    String    @db.Uuid
+  token_hash String    @unique
+  expires_at DateTime  @db.Timestamptz
+  used_at    DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+
+  user       Users     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([expires_at])
+  @@map("Password_Reset_Tokens")
 }
