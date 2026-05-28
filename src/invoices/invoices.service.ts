@@ -8,6 +8,7 @@ import { AuditService } from '../audit/audit.service';
 import { InvoiceItemsService } from './invoice-items.service';
 import { entities, audit_action, Prisma } from '@prisma/client';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import PDFDocument from 'pdfkit';
 
 @Injectable()
 export class InvoicesService {
@@ -31,7 +32,11 @@ export class InvoicesService {
     return `${baseCode}${currentNumber.toString().padStart(8, '0')}`;
   }
 
-  async createInvoice(dto: CreateInvoiceDto, userId: string) {
+  async createInvoice(
+    dto: CreateInvoiceDto,
+    userId: string,
+    isPreview: boolean = false,
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const client = await tx.clients.findUnique({
         where: { id: dto.customerId },
@@ -45,10 +50,14 @@ export class InvoicesService {
         throw new NotFoundException('Rango CAI no encontrado');
       }
       if (!caiRange.is_active) {
-        throw new BadRequestException('El Rango CAI seleccionado no está activo');
+        throw new BadRequestException(
+          'El Rango CAI seleccionado no está activo',
+        );
       }
       if (caiRange.current_invoice_number > caiRange.range_end) {
-        throw new BadRequestException('El Rango CAI ha alcanzado su límite de facturas');
+        throw new BadRequestException(
+          'El Rango CAI ha alcanzado su límite de facturas',
+        );
       }
       if (new Date() > new Date(caiRange.expiration_date)) {
         throw new BadRequestException('El Rango CAI ha expirado');
@@ -59,7 +68,11 @@ export class InvoicesService {
         caiRange.current_invoice_number,
       );
 
-      const precalcItems: { item_subtotal: Prisma.Decimal }[] = [];
+      const precalcItems: {
+        item_subtotal: Prisma.Decimal;
+        product: any;
+        quantity: number;
+      }[] = [];
       for (const item of dto.items) {
         const product = await tx.products.findUnique({
           where: { id: item.productId },
@@ -82,7 +95,7 @@ export class InvoicesService {
             `Subtotal invalido para el producto ${product.name}`,
           );
         }
-        precalcItems.push({ item_subtotal });
+        precalcItems.push({ item_subtotal, product, quantity: item.quantity });
       }
 
       const taxRate = dto.taxRate ?? 0.15;
@@ -90,6 +103,18 @@ export class InvoicesService {
         precalcItems,
         taxRate,
       );
+
+      if (isPreview) {
+        return this.generatePdfBuffer({
+          invoice_number: `${invoice_number} - PREVIEW`,
+          date: new Date(),
+          client,
+          items: precalcItems,
+          subtotal,
+          taxes,
+          total,
+        });
+      }
 
       const invoice = await tx.invoices.create({
         data: {
@@ -238,6 +263,77 @@ export class InvoicesService {
       );
 
       return deletedInvoice;
+    });
+  }
+
+  private generatePdfBuffer(data: any): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers: Buffer[] = [];
+
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => {
+        resolve(Buffer.concat(buffers));
+      });
+      doc.on('error', reject);
+      doc.fontSize(20).text('FACTURA PREVIEW', { align: 'center' }).moveDown();
+      doc
+        .fontSize(12)
+        .text(`No. Factura: ${data.invoice_number}`)
+        .text(`Fecha: ${data.date.toLocaleDateString()}`)
+        .moveDown();
+      doc
+        .text('Informacion Cliente:')
+        .text(`Nombre: ${data.client.name}`)
+        .text(`RTN: ${data.client.rtn}`)
+        .text(`Telefono: ${data.client.phone}`)
+        .text(`Email: ${data.client.email}`)
+        .moveDown();
+      const tableTop = doc.y;
+      doc.font('Helvetica-Bold');
+      doc.text('Producto', 50, tableTop);
+      doc.text('Cantidad', 300, tableTop);
+      doc.text('Precio', 380, tableTop);
+      doc.text('Subtotal', 460, tableTop);
+      doc.font('Helvetica');
+
+      let yPosition = tableTop + 20;
+      data.items.forEach((item: any) => {
+        doc.text(item.product.name, 50, yPosition);
+        doc.text(item.quantity.toString(), 300, yPosition);
+        doc.text(
+          `$${item.product.price.toNumber().toFixed(2)}`,
+          380,
+          yPosition,
+        );
+        doc.text(
+          `$${item.item_subtotal.toNumber().toFixed(2)}`,
+          460,
+          yPosition,
+        );
+        yPosition += 20;
+      });
+
+      doc.moveDown(2);
+      const totalsX = 350;
+      yPosition = doc.y;
+      doc.font('Helvetica-Bold');
+      doc.text('Subtotal:', totalsX, yPosition);
+      doc
+        .font('Helvetica')
+        .text(`$${data.subtotal.toFixed(2)}`, 460, yPosition);
+      yPosition += 20;
+
+      doc.font('Helvetica-Bold');
+      doc.text('ISV:', totalsX, yPosition);
+      doc.font('Helvetica').text(`$${data.taxes.toFixed(2)}`, 460, yPosition);
+      yPosition += 20;
+
+      doc.font('Helvetica-Bold');
+      doc.text('Total:', totalsX, yPosition);
+      doc.font('Helvetica').text(`$${data.total.toFixed(2)}`, 460, yPosition);
+
+      doc.end();
     });
   }
 }
