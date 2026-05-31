@@ -25,6 +25,12 @@ export class CaiRangeService {
       throw new NotFoundException('El CAI asociado no existe.');
     }
 
+    if (!existingCai.is_active) {
+      throw new BadRequestException(
+        'No se pueden asignar rangos a un código CAI que se encuentra inactivo.',
+      );
+    }
+
     if (dto.range_start >= dto.range_end) {
       throw new BadRequestException(
         'El rango inicial debe ser menor que el rango final',
@@ -37,12 +43,15 @@ export class CaiRangeService {
       );
     }
 
-    const activeRange = await this.prisma.cAI_Range.findFirst({
-      where: { cai_id: dto.cai_id, is_active: true },
+    const activeRangeInCaja = await this.prisma.cAI_Range.findFirst({
+      where: { 
+        base_code: dto.base_code, 
+        is_active: true 
+      },
     });
-    if (activeRange) {
+    if (activeRangeInCaja) {
       throw new ConflictException(
-        'Ya existe un rango activo para este CAI. Desactívalo antes de crear uno nuevo.',
+        `Ya existe un rango de facturación activo para el punto de emisión ${dto.base_code}. Desactívalo antes de crear uno nuevo.`,
       );
     }
 
@@ -112,16 +121,16 @@ export class CaiRangeService {
     }
 
     if (dto.is_active === true && !currentRange.is_active) {
-      const activeRange = await this.prisma.cAI_Range.findFirst({
+      const activeRangeInCaja = await this.prisma.cAI_Range.findFirst({
         where: {
-          cai_id: currentRange.cai_id,
+          base_code: baseCode, 
           is_active: true,
           id: { not: id },
         },
       });
-      if (activeRange) {
+      if (activeRangeInCaja) {
         throw new ConflictException(
-          'Ya existe otro rango activo para este CAI.',
+          `Ya existe otro rango activo para la sucursal/caja ${baseCode}. Desactívalo antes de encender este.`,
         );
       }
     }
@@ -179,7 +188,7 @@ export class CaiRangeService {
         newStart <= range.range_end && newEnd >= range.range_start;
       if (doesOverlap) {
         throw new ConflictException(
-          `Conflicto de numeración: Los números del rango se superponen con un rango existente  (${range.range_start} - ${range.range_end}).`,
+          `Conflicto de numeración: Los números del rango se superponen con un rango existente (${range.range_start} - ${range.range_end}) para el punto de emisión ${baseCode}.`,
         );
       }
     }
