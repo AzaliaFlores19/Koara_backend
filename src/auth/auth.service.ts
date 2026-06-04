@@ -53,10 +53,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
-      phone: user.phone,
       role: user.role,
-      is_active: user.is_active,
-      creation_date: user.creation_date,
     };
     return userWithoutPassword;
   }
@@ -112,10 +109,7 @@ export class AuthService {
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
-      phone: newUser.phone,
       role: newUser.role,
-      is_active: newUser.is_active,
-      creation_date: newUser.creation_date,
     };
 
     const payload = {
@@ -194,9 +188,6 @@ export class AuthService {
         expires_at: {
           gt: new Date(),
         },
-      },
-      include: {
-        user: true,
       },
     });
 

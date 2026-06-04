@@ -155,13 +155,17 @@ export class ProductsService {
     return product;
   }
 
-  async deactivate(id: string, userId: string): Promise<ProductResponseDto> {
+  async deactivate(id: string, userId: string) {
     await this.findById(id);
 
     const product = await this.prisma.products.update({
       where: { id },
       data: { is_active: false },
-      select: this.productSelect(),
+      select: {
+        id: true,
+        name: true,
+        is_active: true,
+      },
     });
 
     await this.createAuditLog(userId, id, audit_action.DEACTIVATE);
@@ -196,13 +200,13 @@ export class ProductsService {
     id: string,
     minStock: number,
     userId: string,
-  ): Promise<ProductResponseDto> {
+  ) {
     await this.findById(id);
 
     const product = await this.prisma.products.update({
       where: { id },
       data: { min_stock: minStock },
-      select: this.productSelect(),
+      select: this.stockSelect(),
     });
 
     await this.createAuditLog(userId, id, audit_action.UPDATE);
@@ -210,11 +214,7 @@ export class ProductsService {
     return product;
   }
 
-  async decreaseStock(
-    id: string,
-    quantity: number,
-    userId: string,
-  ): Promise<ProductResponseDto> {
+  async decreaseStock(id: string, quantity: number, userId: string) {
     const product = await this.findById(id);
 
     if (product.stock - quantity < 0) {
@@ -228,7 +228,7 @@ export class ProductsService {
           decrement: quantity,
         },
       },
-      select: this.productSelect(),
+      select: this.stockSelect(),
     });
 
     await this.createAuditLog(userId, id, audit_action.UPDATE);
@@ -236,11 +236,7 @@ export class ProductsService {
     return updatedProduct;
   }
 
-  async increaseStock(
-    id: string,
-    quantity: number,
-    userId: string,
-  ): Promise<ProductResponseDto> {
+  async increaseStock(id: string, quantity: number, userId: string) {
     await this.findById(id);
 
     const updatedProduct = await this.prisma.products.update({
@@ -250,7 +246,7 @@ export class ProductsService {
           increment: quantity,
         },
       },
-      select: this.productSelect(),
+      select: this.stockSelect(),
     });
 
     await this.createAuditLog(userId, id, audit_action.UPDATE);
@@ -335,20 +331,25 @@ export class ProductsService {
       name: true,
       code_bar: true,
       description: true,
-      category_id: true,
       stock: true,
       min_stock: true,
       price: true,
       image: true,
-      created_at: true,
-      is_active: true,
       category: {
         select: {
           id: true,
           name: true,
-          is_active: true,
         },
       },
+    };
+  }
+
+  private stockSelect() {
+    return {
+      id: true,
+      name: true,
+      stock: true,
+      min_stock: true,
     };
   }
 
@@ -365,6 +366,4 @@ export class ProductsService {
     });
     return products.filter((p) => p.stock <= p.min_stock);
   }
-  
 }
-

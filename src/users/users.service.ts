@@ -152,7 +152,6 @@ export class UsersService {
       phone: true,
       role: true,
       is_active: true,
-      creation_date: true,
     };
   }
 }
