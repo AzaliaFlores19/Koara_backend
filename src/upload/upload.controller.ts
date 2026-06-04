@@ -19,7 +19,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { StorageService } from '../storage/storage.service';
 
-@ApiTags('upload')
+@ApiTags('Cargar Imagenes')
 @ApiBearerAuth()
 @Controller('upload')
 @UseGuards(JwtAuthGuard)

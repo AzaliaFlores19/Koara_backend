@@ -27,7 +27,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
-@ApiTags('products')
+@ApiTags('Productos')
 @ApiBearerAuth()
 @Controller('products')
 @UseGuards(JwtAuthGuard, RolesGuard)

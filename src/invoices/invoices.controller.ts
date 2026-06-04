@@ -20,7 +20,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 
-@ApiTags('invoices')
+@ApiTags('Facturas')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('invoices')
