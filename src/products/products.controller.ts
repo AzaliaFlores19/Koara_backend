@@ -50,9 +50,21 @@ export class ProductsController {
 
   @Get()
   @ApiOperation({ summary: 'Obtener lista de productos con filtros' })
-  @ApiQuery({ name: 'page', required: false, description: 'Número de página (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Resultados por página (default: 10)' })
-  @ApiQuery({ name: 'category_id', required: false, description: 'Filtrar por ID de categoría' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Número de página (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Resultados por página (default: 10)',
+  })
+  @ApiQuery({
+    name: 'category_id',
+    required: false,
+    description: 'Filtrar por ID de categoría',
+  })
   @ApiResponse({ status: 200, description: 'Lista de productos' })
   @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Acceso denegado' })
@@ -62,7 +74,10 @@ export class ProductsController {
 
   @Get('/low-stock')
   @ApiOperation({ summary: 'Obtener productos con stock bajo' })
-  @ApiResponse({ status: 200, description: 'Lista de productos con stock bajo' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de productos con stock bajo',
+  })
   @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Acceso denegado' })
   findLowStockProducts() {
@@ -98,7 +113,10 @@ export class ProductsController {
   @Patch('/:id')
   @ApiOperation({ summary: 'Actualizar datos de un producto' })
   @ApiParam({ name: 'id', description: 'ID del producto' })
-  @ApiResponse({ status: 200, description: 'Producto actualizado exitosamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Producto actualizado exitosamente',
+  })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Acceso denegado' })
@@ -114,7 +132,10 @@ export class ProductsController {
   @Patch('/:id/deactivate')
   @ApiOperation({ summary: 'Desactivar un producto' })
   @ApiParam({ name: 'id', description: 'ID del producto' })
-  @ApiResponse({ status: 200, description: 'Producto desactivado exitosamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Producto desactivado exitosamente',
+  })
   @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({ status: 404, description: 'Producto no encontrado' })
