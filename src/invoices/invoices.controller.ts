@@ -63,6 +63,16 @@ export class InvoicesController {
     return new StreamableFile(buffer);
   }
 
+  @Get('/:id')
+  @ApiOperation({ summary: 'Obtener factura por ID' })
+  @ApiResponse({ status: 200, description: 'Factura obtenida con éxito.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async findById(@Param('id') id: string) {
+    const invoice = await this.invoicesService.findById(id);
+    return invoice;
+  }
+
   @Get()
   @ApiOperation({ summary: 'Obtener todas las facturas' })
   @ApiResponse({
@@ -102,15 +112,5 @@ export class InvoicesController {
     @Query('endDate') endDate: string,
   ) {
     return this.invoicesService.getTotalSalesByDateRange(startDate, endDate);
-  }
-
-  @Get('/:id')
-  @ApiOperation({ summary: 'Obtener factura por ID' })
-  @ApiResponse({ status: 200, description: 'Factura obtenida con éxito.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  async findById(@Param('id') id: string) {
-    const invoice = await this.invoicesService.findById(id);
-    return invoice;
   }
 }
