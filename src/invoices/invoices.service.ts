@@ -62,11 +62,14 @@ export class InvoicesService {
       if (new Date() > new Date(caiRange.expiration_date)) {
         throw new BadRequestException('El Rango CAI ha expirado');
       }
+      let invoice_number = '';
 
-      const invoice_number = this.generateInvoiceNumber(
-        caiRange.base_code,
-        caiRange.current_invoice_number,
-      );
+      if (!isPreview) {
+        invoice_number = this.generateInvoiceNumber(
+          caiRange.base_code,
+          caiRange.current_invoice_number,
+        );
+      }
 
       const precalcItems: {
         item_subtotal: Prisma.Decimal;
@@ -106,7 +109,6 @@ export class InvoicesService {
 
       if (isPreview) {
         return this.generatePdfBuffer({
-          invoice_number: `${invoice_number} - PREVIEW`,
           date: new Date(),
           client,
           items: precalcItems,
@@ -154,7 +156,17 @@ export class InvoicesService {
         audit_action.CREATE,
       );
 
-      return invoice;
+      const {
+        client_id,
+        user_id,
+        client_name,
+        client_rtn,
+        client_phone,
+        client_email,
+        ...InvoiceInfo
+      } = invoice;
+
+      return InvoiceInfo;
     });
   }
 
@@ -182,7 +194,10 @@ export class InvoicesService {
 
     return this.prisma.invoices.findMany({
       where,
-      include: { client: true, user: true },
+      include: {
+        client: true,
+        user: true,
+      },
     });
   }
 
@@ -210,7 +225,6 @@ export class InvoicesService {
 
     return this.prisma.invoices.findMany({
       where,
-      include: { client: true, user: true },
     });
   }
 
@@ -245,9 +259,6 @@ export class InvoicesService {
       where: { id },
       include: {
         invoice_items: { include: { product: true } },
-        client: true,
-        user: true,
-        cai_range: true,
       },
     });
 
@@ -305,7 +316,6 @@ export class InvoicesService {
       doc.fontSize(20).text('FACTURA PREVIEW', { align: 'center' }).moveDown();
       doc
         .fontSize(12)
-        .text(`No. Factura: ${data.invoice_number}`)
         .text(`Fecha: ${data.date.toLocaleDateString()}`)
         .moveDown();
       doc
