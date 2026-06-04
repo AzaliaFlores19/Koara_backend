@@ -15,7 +15,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Koara Skincare API')
-    .setDescription('Documentación oficial de la API de Koara (Facturación y Catálogo)')
+    .setDescription(
+      'Documentación oficial de la API de Koara (Facturación y Catálogo)',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();

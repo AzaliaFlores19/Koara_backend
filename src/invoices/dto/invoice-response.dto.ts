@@ -1,10 +1,8 @@
 export class InvoiceItemResponseDto {
   id: string;
-  invoiceId: string;
   productId: string;
   quantity: number;
   unitPrice: number;
-  subtotal: number;
 }
 
 export class InvoiceResponseDto {
@@ -16,6 +14,5 @@ export class InvoiceResponseDto {
   subtotal: number;
   taxes: number;
   total: number;
-  status: string;
   issuedAt: Date;
 }
