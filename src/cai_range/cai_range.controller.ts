@@ -15,16 +15,20 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'; 
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger'; 
+
 @Controller('cai-ranges')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@ApiTags('cai-ranges')
+@ApiTags('Rangos de CAI') 
 @ApiBearerAuth()
 export class CaiRangeController {
   constructor(private readonly caiRangeService: CaiRangeService) {}
 
   @Post()
   @Roles('ADMIN')
+  @ApiOperation({ summary: 'Crear un nuevo rango de facturación (CAI)' })
+  @ApiResponse({ status: 201, description: 'Rango creado exitosamente y activado.' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos o rango en conflicto.' })
   create(
     @Body() createCaiRangeDto: CreateCaiRangeDto,
     @CurrentUser('id') userId: string,
@@ -34,24 +38,38 @@ export class CaiRangeController {
 
   @Get()
   @Roles('ADMIN')
+  @ApiOperation({ summary: 'Obtener el historial de todos los rangos registrados' })
+  @ApiResponse({ status: 200, description: 'Lista de rangos obtenida exitosamente.' })
+  @ApiResponse({ status: 404, description: 'No se encontraron rangos registrados.' })
   findAll() {
     return this.caiRangeService.findAll();
   }
 
   @Get('/active')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'EMPLOYEE')
+  @ApiOperation({ summary: 'Obtener la lista de rangos activos por punto de emisión' })
+  @ApiResponse({ status: 200, description: 'Lista de rangos activos obtenida exitosamente.' })
+  @ApiResponse({ status: 404, description: 'No se encontraron rangos activos.' })
   findActive() {
     return this.caiRangeService.findActive();
   }
 
   @Get('/:id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'EMPLOYEE')
+  @ApiOperation({ summary: 'Buscar un rango de CAI específico por su ID' })
+  @ApiResponse({ status: 200, description: 'Rango encontrado exitosamente.' })
+  @ApiResponse({ status: 404, description: 'Rango no encontrado.' })
+  @ApiParam({ name: 'id', description: 'ID único (UUID) del rango de CAI', example: 'd3b07384-d113-49cd-a5d6-8ee4134449bb' })
   findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.caiRangeService.findById(id);
   }
 
   @Patch('/:id')
   @Roles('ADMIN')
+  @ApiOperation({ summary: 'Modificar los datos de un rango de CAI existente' })
+  @ApiParam({ name: 'id', description: 'ID único (UUID) del rango a modificar' })
+  @ApiResponse({ status: 200, description: 'Rango actualizado correctamente.' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos.' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCaiRangeDto: UpdateCaiRangeDto,
@@ -62,6 +80,10 @@ export class CaiRangeController {
 
   @Patch('/:id/deactivate')
   @Roles('ADMIN')
+  @ApiOperation({ summary: 'Desactivar un rango de CAI de forma lógica' })
+  @ApiParam({ name: 'id', description: 'ID único (UUID) del rango a apagar' })
+  @ApiResponse({ status: 200, description: 'Rango desactivado correctamente ' })
+  @ApiResponse({ status: 404, description: 'Rango no encontrado.' })
   deactivate(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') userId: string,
