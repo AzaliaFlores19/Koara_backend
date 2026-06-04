@@ -22,7 +22,7 @@ import { UpdateClientDto } from './update-client.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
-@ApiTags('clients')
+@ApiTags('Clientes')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('clients')

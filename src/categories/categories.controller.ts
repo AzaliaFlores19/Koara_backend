@@ -24,7 +24,7 @@ import { CategoryResponseDto } from './category-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
-@ApiTags('categories')
+@ApiTags('Categorias')
 @ApiBearerAuth()
 @Controller('categories')
 export class CategoriesController {
@@ -88,30 +88,10 @@ export class CategoriesController {
     return this.categoriesService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Put('/:id')
-  @ApiOperation({ summary: 'Reemplazar los datos de una categoria' })
-  @ApiParam({ name: 'id', description: 'ID de la categoria' })
-  @ApiResponse({
-    status: 200,
-    description: 'Categoria reemplazada exitosamente',
-    type: CategoryResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Datos o ID invalidos' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 404, description: 'Categoria no encontrada' })
-  @ApiResponse({ status: 409, description: 'Nombre de categoria duplicado' })
-  replace(
-    @Param('id') id: string,
-    @Body() dto: CreateCategoryDto,
-    @CurrentUser('id') userId: string,
-  ) {
-    return this.categoriesService.update(id, dto, userId);
-  }
 
   @UseGuards(JwtAuthGuard)
   @Patch('/:id')
-  @ApiOperation({ summary: 'Actualizar parcialmente una categoria' })
+  @ApiOperation({ summary: 'Actualizar una categoria' })
   @ApiParam({ name: 'id', description: 'ID de la categoria' })
   @ApiResponse({
     status: 200,
