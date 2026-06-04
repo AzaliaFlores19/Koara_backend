@@ -72,7 +72,6 @@ export class ReportsService {
       select: {
         id: true,
         invoice_number: true,
-        client_id: true,
         client_name: true,
         total: true,
         created_at: true,
@@ -145,7 +144,6 @@ export class ReportsService {
       select: {
         id: true,
         name: true,
-        price: true,
         category: { select: { name: true } },
       },
     });
@@ -185,7 +183,7 @@ export class ReportsService {
 
     const clients = await this.prisma.clients.findMany({
       where: { id: { in: clientIds } },
-      select: { id: true, name: true, email: true, phone: true },
+      select: { id: true, name: true },
     });
 
     const clientMap = new Map(clients.map((c) => [c.id, c]));
@@ -205,6 +203,12 @@ export class ReportsService {
 
     const client = await this.prisma.clients.findUnique({
       where: { id: customerId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+      },
     });
     if (!client) {
       throw new NotFoundException('Cliente no encontrado');
@@ -212,9 +216,24 @@ export class ReportsService {
 
     const invoices = await this.prisma.invoices.findMany({
       where: { client_id: customerId },
-      include: {
+      select: {
+        id: true,
+        invoice_number: true,
+        created_at: true,
+        total: true,
         invoice_items: {
-          include: { product: true },
+          select: {
+            product_id: true,
+            quantity: true,
+            unit_price: true,
+            item_subtotal: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
         },
       },
       orderBy: { created_at: 'desc' },

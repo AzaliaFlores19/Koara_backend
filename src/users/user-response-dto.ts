@@ -7,5 +7,4 @@ export class UserResponseDto {
   phone!: string | null;
   role!: roles;
   is_active!: boolean;
-  creation_date!: Date;
 }

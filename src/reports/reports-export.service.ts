@@ -168,8 +168,6 @@ export class ReportsExportService {
       const rows = data.map((item) => ({
         customerId: item.client?.id ?? '',
         customerName: item.client?.name ?? '',
-        email: item.client?.email ?? '',
-        phone: item.client?.phone ?? '',
         purchaseCount: item.invoice_count,
         totalSpent: item.total_spent,
         lastPurchase: this.formatDate(item.last_purchase),
@@ -198,7 +196,6 @@ export class ReportsExportService {
       const rows = data.map((invoice) => ({
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoice_number,
-        clientId: invoice.client_id,
         clientName: invoice.client_name,
         total: this.toNumber(invoice.total),
         createdAt: this.formatDate(invoice.created_at),
