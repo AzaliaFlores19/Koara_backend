@@ -51,16 +51,13 @@ const LOGO_PATHS = [
 
 const FIELD_LABELS: Record<string, string> = {
   category: 'Categoría',
-  clientId: 'ID del cliente',
   clientName: 'Cliente',
   createdAt: 'Fecha',
-  customerId: 'ID del cliente',
   customerName: 'Cliente',
   customers: 'Clientes',
   email: 'Correo',
   endDate: 'Fecha final',
   invoiceCount: 'Cantidad de facturas',
-  invoiceId: 'ID de factura',
   invoiceNumber: 'Número de factura',
   invoiceTotal: 'Total de factura',
   invoices: 'Facturas',
@@ -70,7 +67,6 @@ const FIELD_LABELS: Record<string, string> = {
   message: 'Mensaje',
   period: 'Período',
   phone: 'Teléfono',
-  productId: 'ID del producto',
   productName: 'Producto',
   products: 'Productos',
   purchaseCount: 'Compras',
@@ -166,7 +162,6 @@ export class ReportsExportService {
         endDate: filters.endDate,
       });
       const rows = data.map((item) => ({
-        customerId: item.client?.id ?? '',
         customerName: item.client?.name ?? '',
         purchaseCount: item.invoice_count,
         totalSpent: item.total_spent,
@@ -194,7 +189,6 @@ export class ReportsExportService {
         filters.clientId,
       );
       const rows = data.map((invoice) => ({
-        invoiceId: invoice.id,
         invoiceNumber: invoice.invoice_number,
         clientName: invoice.client_name,
         total: this.toNumber(invoice.total),
@@ -205,7 +199,12 @@ export class ReportsExportService {
         title: 'Ventas',
         filenameSlug: 'ventas',
         rows,
-        filters: this.dateFilters(filters, filters.clientId),
+        filters: {
+          ...this.dateFilters(filters),
+          ...(filters.clientId && rows[0]?.clientName
+            ? { clientName: String(rows[0].clientName) }
+            : {}),
+        },
         summary: {
           invoiceCount: rows.length,
           totalSales: this.sumRows(rows, 'total'),
@@ -220,7 +219,6 @@ export class ReportsExportService {
         endDate: filters.endDate!,
       });
       const rows = data.map((item) => ({
-        productId: item.product?.id ?? '',
         productName: item.product?.name ?? '',
         category: item.product?.category?.name ?? '',
         quantitySold: item.total_quantity_sold,
@@ -274,12 +272,9 @@ export class ReportsExportService {
     );
     const rows = data.invoices.flatMap((invoice) =>
       invoice.invoice_items.map((item) => ({
-        customerId: data.client.id,
         customerName: data.client.name,
-        invoiceId: invoice.id,
         invoiceNumber: invoice.invoice_number,
         createdAt: this.formatDate(invoice.created_at),
-        productId: item.product_id ?? '',
         productName: item.product?.name ?? '',
         quantity: item.quantity,
         unitPrice: this.toNumber(item.unit_price),
@@ -292,7 +287,7 @@ export class ReportsExportService {
       title: `Historial de compras - ${data.client.name}`,
       filenameSlug: 'historial-compras',
       rows,
-      filters: { customerId: filters.customerId },
+      filters: { customerName: data.client.name },
       summary: {
         invoices: data.invoices.length,
         items: rows.length,
@@ -331,11 +326,10 @@ export class ReportsExportService {
     return value;
   }
 
-  private dateFilters(filters: ReportFilters, clientId?: string) {
+  private dateFilters(filters: ReportFilters) {
     return {
       startDate: filters.startDate!,
       endDate: filters.endDate!,
-      ...(clientId ? { clientId } : {}),
     };
   }
 
