@@ -196,7 +196,6 @@ export class InvoicesService {
       where,
       include: {
         client: true,
-        user: true,
       },
     });
   }
