@@ -23,6 +23,21 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+ 
+  if (document.paths) {
+    Object.keys(document.paths).forEach((path) => {
+      const methods = document.paths[path];
+      Object.keys(methods).forEach((method) => {
+        if (!methods[method].responses) {
+          methods[method].responses = {};
+        }
+        methods[method].responses['500'] = {
+          description: 'Error interno del servidor. Ocurrió un error inesperado al procesar la solicitud.',
+        };
+      });
+    });
+  }
+
   SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(process.env.PORT ?? 3000);
