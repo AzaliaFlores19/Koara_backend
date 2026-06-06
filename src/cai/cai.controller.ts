@@ -29,6 +29,7 @@ export class CaiController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Registrar un nuevo código CAI autorizado por la SAR' })
   @ApiResponse({ status: 201, description: 'Código CAI registrado con éxito.' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 400, description: 'Datos inválidos o formato de CAI incorrecto.' })
   create(
     @Body() createCaiDto: CreateCaiDto,
@@ -41,6 +42,7 @@ export class CaiController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Obtener la lista de todos los códigos CAI registrados' })
   @ApiResponse({ status: 200, description: 'Lista de códigos CAI obtenida exitosamente.' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'No se encontraron códigos CAI registrados.' })
   findAll() {
     return this.caiService.findAll();
@@ -51,6 +53,7 @@ export class CaiController {
   @ApiOperation({ summary: 'Buscar un código CAI específico por su ID' })
   @ApiParam({ name: 'id', description: 'ID único (UUID) del registro CAI', example: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d' })
   @ApiResponse({ status: 200, description: 'Código CAI encontrado exitosamente.' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Código CAI no encontrado.' })
   findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.caiService.findById(id);
@@ -61,6 +64,8 @@ export class CaiController {
   @ApiOperation({ summary: 'Modificar la información de un código CAI existente' })
   @ApiResponse({ status: 200, description: 'Código CAI actualizado correctamente.' })
   @ApiResponse({ status: 400, description: 'Datos inválidos o formato de CAI incorrecto.' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
+  @ApiResponse({ status: 404, description: 'Código CAI no encontrado.' })
   @ApiParam({ name: 'id', description: 'ID único (UUID) del CAI a modificar' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -75,6 +80,7 @@ export class CaiController {
   @ApiOperation({ summary: 'Desactivar o vencer un código CAI de forma lógica' })
   @ApiParam({ name: 'id', description: 'ID único (UUID) del CAI a desactivar' })
   @ApiResponse({ status: 200, description: 'Código CAI desactivado correctamente (is_active: false).' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Código CAI no encontrado.' })
   deactivate(
     @Param('id', ParseUUIDPipe) id: string,
