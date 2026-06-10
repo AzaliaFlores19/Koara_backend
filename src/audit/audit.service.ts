@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { entities, audit_action, Prisma } from '@prisma/client';
 
+import { AuditFiltersDto } from './dto/audit-filters.dto';
+
 @Injectable()
 export class AuditService {
   constructor(private prisma: PrismaService) {}
@@ -22,16 +24,11 @@ export class AuditService {
     });
   }
 
-  async getAuditLogs(filters: {
-    user?: string;
-    entity?: entities;
-    action?: audit_action;
-    date?: string; // Formato esperado: YYYY-MM-DD
-  }) {
+  async getAuditLogs(filters: AuditFiltersDto) {
     const where: Prisma.Audit_LogsWhereInput = {};
 
-    if (filters.user) {
-      where.user_id = filters.user;
+    if (filters.userId) {
+      where.user_id = filters.userId;
     }
 
     if (filters.entity) {
@@ -42,17 +39,18 @@ export class AuditService {
       where.action = filters.action;
     }
 
-    if (filters.date) {
-      const startDate = new Date(filters.date);
-      startDate.setUTCHours(0, 0, 0, 0);
-
-      const endDate = new Date(filters.date);
-      endDate.setUTCHours(23, 59, 59, 999);
-
-      where.created_at = {
-        gte: startDate,
-        lte: endDate,
-      };
+    if (filters.startDate || filters.endDate) {
+      where.created_at = {};
+      if (filters.startDate) {
+        const start = new Date(filters.startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        where.created_at.gte = start;
+      }
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        where.created_at.lte = end;
+      }
     }
 
     return this.prisma.audit_Logs.findMany({

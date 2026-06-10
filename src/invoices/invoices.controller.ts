@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { InvoiceFiltersDto } from './dto/invoice-filters.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   ApiTags,
@@ -81,7 +82,7 @@ export class InvoicesController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  async findAll(@Query() filters: any) {
+  async findAll(@Query() filters: InvoiceFiltersDto) {
     const invoices = await this.invoicesService.findAll(filters);
     return invoices;
   }
@@ -94,7 +95,7 @@ export class InvoicesController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  async findActive(@Query() filters: any) {
+  async findActive(@Query() filters: InvoiceFiltersDto) {
     const invoices = await this.invoicesService.findActive(filters);
     return invoices;
   }

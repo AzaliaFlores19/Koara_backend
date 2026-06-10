@@ -8,6 +8,7 @@ import { AuditService } from '../audit/audit.service';
 import { InvoiceItemsService } from './invoice-items.service';
 import { entities, audit_action, Prisma } from '@prisma/client';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { InvoiceFiltersDto } from './dto/invoice-filters.dto';
 import PDFDocument from 'pdfkit';
 
 @Injectable()
@@ -170,26 +171,31 @@ export class InvoicesService {
     });
   }
 
-  async findAll(filters: {
-    customerId?: string;
-    cashierId?: string;
-    issuedAtStart?: string;
-    issuedAtEnd?: string;
-  }) {
+  async findAll(filters: InvoiceFiltersDto) {
     const where: Prisma.InvoicesWhereInput = {};
 
     if (filters.customerId) {
       where.client_id = filters.customerId;
     }
-    if (filters.cashierId) {
-      where.user_id = filters.cashierId;
-    }
-    if (filters.issuedAtStart || filters.issuedAtEnd) {
+
+    if (filters.startDate || filters.endDate) {
       where.created_at = {};
-      if (filters.issuedAtStart)
-        where.created_at.gte = new Date(filters.issuedAtStart);
-      if (filters.issuedAtEnd)
-        where.created_at.lte = new Date(filters.issuedAtEnd);
+      if (filters.startDate) {
+        const start = new Date(filters.startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        where.created_at.gte = start;
+      }
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        where.created_at.lte = end;
+      }
+    }
+
+    if (filters.minTotal || filters.maxTotal) {
+      where.total = {};
+      if (filters.minTotal) where.total.gte = filters.minTotal;
+      if (filters.maxTotal) where.total.lte = filters.maxTotal;
     }
 
     return this.prisma.invoices.findMany({
@@ -200,26 +206,31 @@ export class InvoicesService {
     });
   }
 
-  async findActive(filters: {
-    customerId?: string;
-    cashierId?: string;
-    issuedAtStart?: string;
-    issuedAtEnd?: string;
-  }) {
+  async findActive(filters: InvoiceFiltersDto) {
     const where: Prisma.InvoicesWhereInput = {};
 
     if (filters.customerId) {
       where.client_id = filters.customerId;
     }
-    if (filters.cashierId) {
-      where.user_id = filters.cashierId;
-    }
-    if (filters.issuedAtStart || filters.issuedAtEnd) {
+
+    if (filters.startDate || filters.endDate) {
       where.created_at = {};
-      if (filters.issuedAtStart)
-        where.created_at.gte = new Date(filters.issuedAtStart);
-      if (filters.issuedAtEnd)
-        where.created_at.lte = new Date(filters.issuedAtEnd);
+      if (filters.startDate) {
+        const start = new Date(filters.startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        where.created_at.gte = start;
+      }
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        where.created_at.lte = end;
+      }
+    }
+
+    if (filters.minTotal || filters.maxTotal) {
+      where.total = {};
+      if (filters.minTotal) where.total.gte = filters.minTotal;
+      if (filters.maxTotal) where.total.lte = filters.maxTotal;
     }
 
     return this.prisma.invoices.findMany({
