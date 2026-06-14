@@ -52,7 +52,7 @@ export class CategoriesService {
         take: limit,
         orderBy: { created_at: 'desc' },
       }),
-      this.prisma.categories.count(),
+      this.prisma.categories.count({ where: { is_active: true } }),
     ]);
     return { data, total, page, limit };
   }
