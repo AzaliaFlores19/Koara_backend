@@ -64,6 +64,21 @@ export class InvoicesController {
     return new StreamableFile(buffer);
   }
 
+  @Get('/total-invoices')
+  @ApiOperation({ summary: 'Obtener total de ventas por rango de fechas' })
+  @ApiResponse({
+    status: 200,
+    description: 'Total de ventas obtenido con éxito.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async getTotalSalesByDateRange(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.invoicesService.getTotalSalesByDateRange(startDate, endDate);
+  }
+
   @Get('/:id')
   @ApiOperation({ summary: 'Obtener factura por ID' })
   @ApiResponse({ status: 200, description: 'Factura obtenida con éxito.' })
@@ -100,18 +115,5 @@ export class InvoicesController {
     return invoices;
   }
 
-  @Get('/total-invoices')
-  @ApiOperation({ summary: 'Obtener total de ventas por rango de fechas' })
-  @ApiResponse({
-    status: 200,
-    description: 'Total de ventas obtenido con éxito.',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  async getTotalSalesByDateRange(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-  ) {
-    return this.invoicesService.getTotalSalesByDateRange(startDate, endDate);
-  }
+  
 }

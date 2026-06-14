@@ -8,6 +8,8 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './create-user-dto';
 import { UpdateUserDto } from './update-user-dto';
+import { UpdateProfileDto } from './update-profile.dto';
+import { ChangePasswordDto } from './change-password-profile.dto';
 import { UserResponseDto } from './user-response-dto';
 import type { Users } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
@@ -24,9 +26,7 @@ export class UsersService {
     userId?: string,
   ): Promise<UserResponseDto> {
     const existingUser = await this.prisma.users.findUnique({
-      where: {
-        email: createUserDto.email,
-      },
+      where: { email: createUserDto.email },
     });
 
     if (existingUser) {
@@ -58,18 +58,14 @@ export class UsersService {
 
   async findAll(): Promise<UserResponseDto[]> {
     return this.prisma.users.findMany({
-      where: {
-        is_active: true,
-      },
+      where: { is_active: true },
       select: this.userSelectWithoutPassword(),
     });
   }
 
   async findById(id: string): Promise<UserResponseDto> {
     const user = await this.prisma.users.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
       select: this.userSelectWithoutPassword(),
     });
 
@@ -85,62 +81,68 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     userId: string,
   ): Promise<UserResponseDto> {
-    await this.findById(id);
+    try {
+      const data: Prisma.UsersUpdateInput = {};
 
-    const data: Prisma.UsersUpdateInput = {
-      ...updateUserDto,
-    };
+      if (updateUserDto.name) data.name = updateUserDto.name;
+      if (updateUserDto.email) data.email = updateUserDto.email;
+      if (updateUserDto.phone !== undefined) data.phone = updateUserDto.phone;
+      if (updateUserDto.role) data.role = updateUserDto.role;
+      if (updateUserDto.is_active !== undefined) data.is_active = updateUserDto.is_active;
+      
+      if (updateUserDto.password) {
+        data.password = await bcrypt.hash(updateUserDto.password, 10);
+      }
 
-    if (updateUserDto.password) {
-      data.password = await bcrypt.hash(updateUserDto.password, 10);
-    }
+      const updatedUser = await this.prisma.users.update({
+        where: { id },
+        data,
+        select: this.userSelectWithoutPassword(),
+      });
 
-    const updatedUser = await this.prisma.users.update({
-      where: {
+      await this.auditService.createLog(
+        userId,
+        entities.USERS,
         id,
-      },
-      data,
-      select: this.userSelectWithoutPassword(),
-    });
+        audit_action.UPDATE,
+      );
 
-    await this.auditService.createLog(
-      userId,
-      entities.USERS,
-      id,
-      audit_action.UPDATE,
-    );
-
-    return updatedUser;
+      return updatedUser;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Usuario no encontrado para actualizar');
+      }
+      throw error;
+    }
   }
 
   async deactivate(id: string, userId: string): Promise<UserResponseDto> {
-    await this.findById(id);
+    try {
+      const user = await this.prisma.users.update({
+        where: { id },
+        data: { is_active: false },
+        select: this.userSelectWithoutPassword(),
+      });
 
-    const user = await this.prisma.users.update({
-      where: {
+      await this.auditService.createLog(
+        userId,
+        entities.USERS,
         id,
-      },
-      data: {
-        is_active: false,
-      },
-      select: this.userSelectWithoutPassword(),
-    });
+        audit_action.DEACTIVATE,
+      );
 
-    await this.auditService.createLog(
-      userId,
-      entities.USERS,
-      id,
-      audit_action.DEACTIVATE,
-    );
-
-    return user;
+      return user;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Usuario no encontrado para desactivar');
+      }
+      throw error;
+    }
   }
 
   async findByEmail(email: string): Promise<Users | null> {
     return this.prisma.users.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
     });
   }
 
@@ -153,5 +155,78 @@ export class UsersService {
       role: true,
       is_active: true,
     };
+  }
+
+  async getProfile(userId: string): Promise<UserResponseDto> {
+    return this.findById(userId);
+  }
+
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<UserResponseDto> {
+    try {
+      const data: Prisma.UsersUpdateInput = {};
+      
+      if (dto.name) data.name = dto.name;
+      if (dto.email) data.email = dto.email;
+      if (dto.phone !== undefined) data.phone = dto.phone; // Ahora procesa el teléfono mapeado del DTO correctamente
+
+      const updatedUser = await this.prisma.users.update({
+        where: { id: userId },
+        data,
+        select: this.userSelectWithoutPassword(),
+      });
+
+      await this.auditService.createLog(
+        userId,
+        entities.USERS,
+        userId,
+        audit_action.UPDATE,
+      );
+
+      return updatedUser;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Perfil de usuario no encontrado');
+      }
+      throw error;
+    }
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.users.findUnique({
+      where: { id: userId },
+      select: { password: true },
+    });
+
+    if (!user || !user.password) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const isValid = await bcrypt.compare(
+      dto.currentPassword,
+      user.password,
+    );
+
+    if (!isValid) {
+      throw new BadRequestException('Contraseña actual incorrecta');
+    }
+
+    const hashed = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.users.update({
+      where: { id: userId },
+      data: { password: hashed },
+    });
+
+    await this.auditService.createLog(
+      userId,
+      entities.USERS,
+      userId,
+      audit_action.UPDATE,
+    );
+
+    return { message: 'Contraseña actualizada correctamente' };
   }
 }

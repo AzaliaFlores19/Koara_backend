@@ -22,6 +22,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { ChangePasswordDto } from './change-password-profile.dto';
+import { UpdateProfileDto } from './update-profile.dto';
 
 @ApiTags('Usuarios')
 @ApiBearerAuth()
@@ -29,6 +31,49 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('me')
+  @ApiOperation({ summary: 'Obtener el perfil del usuario autenticado' })
+  @ApiResponse({
+    status: 200,
+    description: 'Datos del perfil actual obtenidos correctamente',
+    type: UserResponseDto,
+  })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  getProfile(@CurrentUser('id') userId: string) {
+    return this.usersService.getProfile(userId);
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Actualizar el perfil del usuario autenticado' })
+  @ApiResponse({
+    status: 200,
+    description: 'Perfil actualizado exitosamente',
+    type: UserResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  updateProfile(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(userId, dto);
+  }
+
+  @Patch('me/change-password')
+  @ApiOperation({ summary: 'Cambiar contraseña del usuario autenticado' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contraseña modificada correctamente',
+  })
+  @ApiResponse({ status: 400, description: 'Contraseña actual incorrecta o datos inválidos' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  changePassword(
+    @CurrentUser('id') userId: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.usersService.changePassword(userId, dto);
+  }
 
   @Post()
   @Roles('ADMIN')
@@ -114,4 +159,5 @@ export class UsersController {
   deactivate(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.usersService.deactivate(id, userId);
   }
+
 }
