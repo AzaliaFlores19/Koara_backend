@@ -19,6 +19,16 @@ async create(createCaiDto: CreateCaiDto, userId: string) {
     if (existingCai) {
         throw new ConflictException('El código CAI ya existe.');
     }
+
+    const activeCai = await this.prisma.cAI.findFirst({
+      where: { is_active: true }
+    });
+    if (activeCai) {
+      throw new ConflictException(
+        `Ya existe un código CAI activo (${activeCai.cai_code}). Debes desactivarlo antes de crear o activar uno nuevo.`
+      );
+    }
+
     const cai = await this.prisma.cAI.create({
       data: {
         cai_code: createCaiDto.cai_code,
@@ -44,7 +54,7 @@ async create(createCaiDto: CreateCaiDto, userId: string) {
   }
 
     async updateCai(id: string, dto: UpdateCaiDto, userId: string) {
-    await this.findById(id);
+   const currentCai = await this.findById(id);
 
     if (dto.cai_code) {
       const duplicateCai = await this.prisma.cAI.findFirst({
@@ -55,6 +65,20 @@ async create(createCaiDto: CreateCaiDto, userId: string) {
       });
       if (duplicateCai) {
         throw new ConflictException('El código CAI ya está en uso por otro registro.');
+      }
+    }
+
+    if (dto.is_active === true && !currentCai.is_active) {
+      const activeCai = await this.prisma.cAI.findFirst({
+        where: {
+          is_active: true,
+          id: { not: id }
+        }
+      });
+      if (activeCai) {
+        throw new ConflictException(
+          `No puedes activar este CAI porque el código ${activeCai.cai_code} ya se encuentra activo actualmente.`
+        );
       }
     }
 

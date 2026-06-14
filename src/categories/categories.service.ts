@@ -93,12 +93,27 @@ export class CategoriesService {
   }
 
   async deactivate(id: string, user_id: string) {
-    await this.findOne(id);
-    const category = await this.prisma.categories.update({
-      where: { id },
-      data: { is_active: false },
-    });
-    await this.createAuditLog(user_id, id, 'DEACTIVATE');
-    return category;
+  await this.findOne(id);
+
+  const tieneProductos = await this.prisma.products.findFirst({
+    where: { 
+      category_id: id,
+      is_active: true 
+    },
+  });
+
+  if (tieneProductos) {
+    throw new BadRequestException(
+      'No se puede desactivar la categoría porque tiene productos activos asociados. Reasigna los productos antes de continuar.'
+    );
   }
+
+  const category = await this.prisma.categories.update({
+    where: { id },
+    data: { is_active: false },
+  });
+  
+  await this.createAuditLog(user_id, id, 'DEACTIVATE');
+  return category;
+}
 }
