@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCaiDto } from './create-cai-dto';
 import { UpdateCaiDto } from './update-cai-dto';
@@ -12,7 +12,7 @@ export class CaiService {
     private auditService: AuditService,
   ) {}
 
-async create(createCaiDto: CreateCaiDto, userId: string) {
+  async create(createCaiDto: CreateCaiDto, userId: string) {
     const existingCai = await this.prisma.cAI.findUnique({
         where: { cai_code: createCaiDto.cai_code },
     });
@@ -53,8 +53,8 @@ async create(createCaiDto: CreateCaiDto, userId: string) {
     return cai;
   }
 
-    async updateCai(id: string, dto: UpdateCaiDto, userId: string) {
-   const currentCai = await this.findById(id);
+  async updateCai(id: string, dto: UpdateCaiDto, userId: string) {
+    const currentCai = await this.findById(id);
 
     if (dto.cai_code) {
       const duplicateCai = await this.prisma.cAI.findFirst({
@@ -65,6 +65,19 @@ async create(createCaiDto: CreateCaiDto, userId: string) {
       });
       if (duplicateCai) {
         throw new ConflictException('El código CAI ya está en uso por otro registro.');
+      }
+
+      const subRanges = await this.prisma.cAI_Range.findMany({ where: { cai_id: id } });
+      const rangeIds = subRanges.map(r => r.id);
+
+      if (rangeIds.length > 0) {
+        const invoicesLinked = await this.prisma.invoices.count({
+          where: { cai_range_id: { in: rangeIds } }
+        });
+
+        if (invoicesLinked > 0) {
+          throw new BadRequestException('No se puede alterar el código textual del CAI maestro porque ya contiene transacciones comerciales emitidas en su historial.');
+        }
       }
     }
 
@@ -92,9 +105,8 @@ async create(createCaiDto: CreateCaiDto, userId: string) {
     return updatedCai;
   }
 
-    async deactivateCai(id: string, userId: string) {
+  async deactivateCai(id: string, userId: string) {
     const currentCai = await this.findById(id);
-
     const newActiveStatus = !currentCai.is_active;
 
     if (newActiveStatus === true) {
