@@ -10,12 +10,28 @@ import { isUUID } from 'class-validator';
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Helper privado para estirar el rango de fechas.
+   * Ajusta el inicio a las 00:00:00.000 y el fin a las 23:59:59.999 en formato UTC.
+   */
+  private getStartAndEndDates(startDate: string, endDate: string) {
+    const start = new Date(startDate);
+    start.setUTCHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setUTCHours(23, 59, 59, 999);
+
+    return { start, end };
+  }
+
   async getSalesByDateRange(startDate: string, endDate: string) {
+    const { start, end } = this.getStartAndEndDates(startDate, endDate);
+
     const invoices = await this.prisma.invoices.findMany({
       where: {
         created_at: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: start,
+          lte: end,
         },
       },
       select: {
@@ -61,11 +77,13 @@ export class ReportsService {
       throw new BadRequestException('ID de cliente no valido');
     }
 
+    const { start, end } = this.getStartAndEndDates(startDate, endDate);
+
     return this.prisma.invoices.findMany({
       where: {
         created_at: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: start,
+          lte: end,
         },
         ...(clientId ? { client_id: clientId } : {}),
       },
@@ -81,11 +99,13 @@ export class ReportsService {
   }
 
   async getSalesOverview(startDate: string, endDate: string) {
+    const { start, end } = this.getStartAndEndDates(startDate, endDate);
+
     const invoices = await this.prisma.invoices.findMany({
       where: {
         created_at: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: start,
+          lte: end,
         },
       },
       select: {
@@ -120,13 +140,15 @@ export class ReportsService {
     limit: number,
     range: { startDate: string; endDate: string },
   ) {
+    const { start, end } = this.getStartAndEndDates(range.startDate, range.endDate);
+
     const grouped = await this.prisma.invoice_Product.groupBy({
       by: ['product_id'],
       where: {
         invoice: {
           created_at: {
-            gte: new Date(range.startDate),
-            lte: new Date(range.endDate),
+            gte: start,
+            lte: end,
           },
         },
       },
@@ -161,17 +183,15 @@ export class ReportsService {
     limit: number,
     range?: { startDate?: string; endDate?: string },
   ) {
+    const dates = range?.startDate && range?.endDate 
+      ? this.getStartAndEndDates(range.startDate, range.endDate) 
+      : null;
+
     const grouped = await this.prisma.invoices.groupBy({
       by: ['client_id'],
-      where:
-        range?.startDate && range?.endDate
-          ? {
-              created_at: {
-                gte: new Date(range.startDate),
-                lte: new Date(range.endDate),
-              },
-            }
-          : undefined,
+      where: {
+        ...(dates ? { created_at: { gte: dates.start, lte: dates.end } } : {}),
+      },
       _count: { id: true },
       _sum: { total: true },
       _max: { created_at: true },
