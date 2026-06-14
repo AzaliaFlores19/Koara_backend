@@ -151,20 +151,46 @@ export class CaiRangeService {
   }
 
   async deactivateCaiRange(id: string, userId: string) {
-    await this.findById(id);
-    const deactivatedCaiRange = await this.prisma.cAI_Range.update({
+    const currentRange = await this.findById(id);
+    
+    const newActiveStatus = !currentRange.is_active;
+
+    if (newActiveStatus === true) {
+      
+      if (currentRange.cai?.is_active !== true) {
+        throw new BadRequestException(
+          'No se puede activar este rango debido a que el código CAI maestro asociado se encuentra inactivo o no existe.',
+        );
+      }
+
+      const activeRangeInCaja = await this.prisma.cAI_Range.findFirst({
+        where: {
+          base_code: currentRange.base_code,
+          is_active: true,
+          id: { not: id }, 
+        },
+      });
+
+      if (activeRangeInCaja) {
+        throw new ConflictException(
+          `Ya existe un rango de facturación activo para el punto de emisión ${currentRange.base_code}. Desactívalo antes de encender este.`,
+        );
+      }
+    }
+
+    const toggledCaiRange = await this.prisma.cAI_Range.update({
       where: { id },
-      data: { is_active: false },
+      data: { is_active: newActiveStatus },
     });
 
     await this.auditService.createLog(
       userId,
       entities.CAI_RANGE,
       id,
-      audit_action.DEACTIVATE,
+      audit_action.UPDATE,
     );
 
-    return deactivatedCaiRange;
+    return toggledCaiRange;
   }
 
   private async validateOverlapping(
