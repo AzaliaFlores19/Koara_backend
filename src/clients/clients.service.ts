@@ -55,7 +55,7 @@ export class ClientsService {
         take: limit,
         orderBy: { created_at: 'desc' },
       }),
-      this.prisma.clients.count(),
+      this.prisma.clients.count({ where: { is_active: true } }),
     ]);
     return { data, total, page, limit };
   }
