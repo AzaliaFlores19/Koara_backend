@@ -6,7 +6,149 @@ datasource db {
   provider = "postgresql"
 }
 
-// --- Enums ---
+model Users {
+  id                    String               @id @default(uuid()) @db.Uuid
+  name                  String               @db.VarChar(50)
+  email                 String               @unique
+  base_code             String               @unique
+  phone                 String?
+  password              String
+  role                  roles
+  is_active             Boolean              @default(true)
+  creation_date         DateTime             @default(now()) @db.Timestamptz(6)
+  audit_logs            Audit_Logs[]
+  invoices              Invoices[]
+  password_reset_tokens PasswordResetToken[]
+}
+
+model Products {
+  id            String            @id @default(uuid()) @db.Uuid
+  name          String            @unique
+  code_bar      String            @unique
+  description   String?           @db.VarChar(200)
+  category_id   String?           @db.Uuid
+  stock         Int               @default(0)
+  min_stock     Int               @default(5)
+  price         Decimal           @db.Decimal(10, 2)
+  image         String?
+  created_at    DateTime          @default(now()) @db.Timestamptz(6)
+  is_active     Boolean           @default(true)
+  invoice_items Invoice_Product[]
+  category      Categories?       @relation(fields: [category_id], references: [id])
+}
+
+model Categories {
+  id         String     @id @default(uuid()) @db.Uuid
+  name       String     @unique
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  is_active  Boolean    @default(true)
+  products   Products[]
+}
+
+model Clients {
+  id         String     @id @default(uuid()) @db.Uuid
+  name       String
+  rtn        String?    @unique
+  phone      String?
+  email      String?    @unique
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  is_active  Boolean    @default(true)
+  invoices   Invoices[]
+}
+
+model Invoices {
+  id             String            @id @default(uuid()) @db.Uuid
+  invoice_number String            @unique
+  cai_range_id   String            @db.Uuid
+  client_id      String            @db.Uuid
+  user_id        String            @db.Uuid
+  subtotal       Decimal           @db.Decimal(10, 2)
+  taxes          Decimal           @db.Decimal(10, 2)
+  total          Decimal           @db.Decimal(10, 2)
+  payment_method payment_method
+  created_at     DateTime          @default(now()) @db.Timestamptz(6)
+  client_email   String?
+  client_name    String
+  client_phone   String?
+  client_rtn     String?
+  invoice_items  Invoice_Product[]
+  cai_range      CAI_Range         @relation(fields: [cai_range_id], references: [id])
+  client         Clients           @relation(fields: [client_id], references: [id])
+  user           Users             @relation(fields: [user_id], references: [id])
+}
+
+model CAI {
+  id         String      @id @default(uuid()) @db.Uuid
+  cai_code   String      @unique
+  is_active  Boolean     @default(true)
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  ranges     CAI_Range[]
+}
+
+model CAI_Range {
+  id                     String     @id @default(uuid()) @db.Uuid
+  cai_id                 String?    @db.Uuid
+  range_start            Int
+  range_end              Int
+  current_invoice_number Int
+  expiration_date        DateTime   @db.Date
+  is_active              Boolean    @default(true)
+  created_at             DateTime   @default(now()) @db.Timestamptz(6)
+  base_code              String
+  cai                    CAI?       @relation(fields: [cai_id], references: [id])
+  invoices               Invoices[]
+}
+
+model Invoice_Product {
+  id            String    @id @default(uuid()) @db.Uuid
+  invoice_id    String?   @db.Uuid
+  product_id    String?   @db.Uuid
+  quantity      Int
+  unit_price    Decimal?  @db.Decimal(10, 2)
+  item_subtotal Decimal?  @db.Decimal(10, 2)
+  invoice       Invoices? @relation(fields: [invoice_id], references: [id])
+  product       Products? @relation(fields: [product_id], references: [id])
+
+  @@unique([invoice_id, product_id])
+}
+
+model Audit_Logs {
+  id         String       @id @default(uuid()) @db.Uuid
+  user_id    String       @db.Uuid
+  entity     entities
+  entity_id  String       @db.Uuid
+  action     audit_action
+  created_at DateTime     @default(now()) @db.Timestamptz(6)
+  user       Users        @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([created_at])
+}
+
+model Company {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  rtn        String
+  address    String?
+  phone      String?
+  email      String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  logo       String?
+}
+
+model PasswordResetToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  user_id    String    @db.Uuid
+  token_hash String    @unique
+  expires_at DateTime  @db.Timestamptz(6)
+  used_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  user       Users     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([expires_at])
+  @@map("Password_Reset_Tokens")
+}
 
 enum roles {
   ADMIN
@@ -37,159 +179,4 @@ enum audit_action {
   DEACTIVATE
   LOGIN
   LOGOUT
-}
-
-// --- Modelos ---
-
-model Users {
-  id            String       @id @default(uuid()) @db.Uuid
-  name          String       @db.VarChar(50)
-  email         String       @unique
-  phone         String?
-  password      String
-  role          roles
-  is_active     Boolean      @default(true)
-  creation_date DateTime     @default(now()) @db.Timestamptz
-  
-  invoices      Invoices[]
-  audit_logs    Audit_Logs[]
-  password_reset_tokens PasswordResetToken[]
-}
-
-model Products {
-  id            String           @id @default(uuid()) @db.Uuid
-  name          String           @unique
-  code_bar      String           @unique
-  description   String?          @db.VarChar(200)
-  category_id   String?          @db.Uuid
-  stock         Int              @default(0)
-  min_stock     Int              @default(5)
-  price         Decimal          @db.Decimal(10, 2)
-  image         String?          @db.Text
-  created_at    DateTime         @default(now()) @db.Timestamptz
-  is_active     Boolean          @default(true)
-
-  category      Categories?      @relation(fields: [category_id], references: [id])
-  invoice_items Invoice_Product[]
-}
-
-model Categories {
-  id         String     @id @default(uuid()) @db.Uuid
-  name       String     @unique
-  created_at DateTime   @default(now()) @db.Timestamptz
-  is_active  Boolean    @default(true)
-
-  products   Products[]
-}
-
-model Clients {
-  id         String     @id @default(uuid()) @db.Uuid
-  name       String
-  rtn        String?   @unique
-  phone      String?
-  email      String?    @unique
-  created_at DateTime   @default(now()) @db.Timestamptz
-  is_active  Boolean    @default(true)
-
-  invoices   Invoices[]
-}
-
-model Invoices {
-  id              String         @id @default(uuid()) @db.Uuid
-  invoice_number  String         @unique
-  cai_range_id    String         @db.Uuid
-  client_id       String         @db.Uuid
-  user_id         String         @db.Uuid
-  client_name           String
-  client_rtn            String?
-  client_phone          String?
-  client_email          String?
-  subtotal        Decimal        @db.Decimal(10, 2)
-  taxes           Decimal        @db.Decimal(10, 2)
-  total           Decimal        @db.Decimal(10, 2)
-  payment_method  payment_method
-  created_at      DateTime       @default(now()) @db.Timestamptz
-
-  cai_range       CAI_Range      @relation(fields: [cai_range_id], references: [id])
-  client          Clients        @relation(fields: [client_id], references: [id])
-  user            Users          @relation(fields: [user_id], references: [id])
-  invoice_items   Invoice_Product[]
-}
-
-model CAI {
-  id         String      @id @default(uuid()) @db.Uuid
-  cai_code   String      @unique
-  is_active  Boolean     @default(true)
-  created_at DateTime    @default(now()) @db.Timestamptz
-
-  ranges     CAI_Range[]
-}
-
-model CAI_Range {
-  id                     String     @id @default(uuid()) @db.Uuid
-  cai_id                 String?    @db.Uuid
-  base_code              String     
-  range_start            Int
-  range_end              Int
-  current_invoice_number Int
-  expiration_date        DateTime   @db.Date
-  is_active              Boolean    @default(true)
-  created_at             DateTime   @default(now()) @db.Timestamptz
-
-  cai                    CAI?       @relation(fields: [cai_id], references: [id])
-  invoices               Invoices[]
-}
-
-model Invoice_Product {
-  id             String    @id @default(uuid()) @db.Uuid
-  invoice_id     String?   @db.Uuid
-  product_id     String?   @db.Uuid
-  quantity       Int
-  unit_price     Decimal?  @db.Decimal(10, 2)
-  item_subtotal  Decimal?  @db.Decimal(10, 2)
-
-  invoice        Invoices? @relation(fields: [invoice_id], references: [id])
-  product        Products? @relation(fields: [product_id], references: [id])
-
-  @@unique([invoice_id, product_id])
-}
-
-model Audit_Logs {
-  id          String       @id @default(uuid()) @db.Uuid
-  user_id     String       @db.Uuid
-  entity      entities
-  entity_id   String       @db.Uuid
-  action      audit_action
-  created_at  DateTime     @default(now()) @db.Timestamptz
-
-  user        Users        @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@index([created_at])
-}
-
-model Company {
-  id         String   @id @default(uuid()) @db.Uuid
-  name       String
-  rtn        String
-  address    String?  @db.Text
-  phone      String?
-  email      String?
-  logo       String?  @db.Text
-  created_at DateTime @default(now()) @db.Timestamptz
-}
-
-model PasswordResetToken {
-  id         String    @id @default(uuid()) @db.Uuid
-  user_id    String    @db.Uuid
-  token_hash String    @unique
-  expires_at DateTime  @db.Timestamptz
-  used_at    DateTime? @db.Timestamptz
-  created_at DateTime  @default(now()) @db.Timestamptz
-
-  user       Users     @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@index([expires_at])
-  @@map("Password_Reset_Tokens")
 }

@@ -62,13 +62,6 @@ export class CreateInvoiceDto {
   @IsNumber()
   @IsOptional()
   taxRate?: number;
-  @ApiProperty({
-    description: 'ID del rango CAI asociado a la factura',
-    example: 'caiRange123',
-  })
-  @IsUUID()
-  @IsNotEmpty()
-  caiRangeId: string;
 
   @ApiProperty({
     description: 'Lista de items de la factura',

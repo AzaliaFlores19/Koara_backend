@@ -39,22 +39,26 @@ export class InvoicesService {
     isPreview: boolean = false,
   ) {
     return this.prisma.$transaction(async (tx) => {
+      const user = await tx.users.findUnique({
+        where: { id: userId },
+      });
+      if (!user) throw new NotFoundException('Usuario no encontrado');
+
+      const caiRange = await tx.cAI_Range.findFirst({
+        where: {
+          base_code: user.base_code,
+          is_active: true,
+        },
+      });
+      if (!caiRange) {
+        throw new NotFoundException('Rango CAI no encontrado para este usuario');
+      }
+
       const client = await tx.clients.findUnique({
         where: { id: dto.customerId },
       });
       if (!client) throw new NotFoundException('Cliente no encontrado');
 
-      const caiRange = await tx.cAI_Range.findUnique({
-        where: { id: dto.caiRangeId },
-      });
-      if (!caiRange) {
-        throw new NotFoundException('Rango CAI no encontrado');
-      }
-      if (!caiRange.is_active) {
-        throw new BadRequestException(
-          'El Rango CAI seleccionado no está activo',
-        );
-      }
       if (caiRange.current_invoice_number > caiRange.range_end) {
         throw new BadRequestException(
           'El Rango CAI ha alcanzado su límite de facturas',

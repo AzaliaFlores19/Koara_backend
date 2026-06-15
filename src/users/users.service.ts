@@ -39,6 +39,7 @@ export class UsersService {
       data: {
         name: createUserDto.name,
         email: createUserDto.email,
+        base_code: createUserDto.base_code,
         phone: createUserDto.phone,
         password: hashedPassword,
         role: createUserDto.role,
@@ -68,7 +69,6 @@ export class UsersService {
       where: { id },
       select: this.userSelectWithoutPassword(),
     });
-
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }
@@ -86,10 +86,12 @@ export class UsersService {
 
       if (updateUserDto.name) data.name = updateUserDto.name;
       if (updateUserDto.email) data.email = updateUserDto.email;
+      if (updateUserDto.base_code) data.base_code = updateUserDto.base_code;
       if (updateUserDto.phone !== undefined) data.phone = updateUserDto.phone;
       if (updateUserDto.role) data.role = updateUserDto.role;
-      if (updateUserDto.is_active !== undefined) data.is_active = updateUserDto.is_active;
-      
+      if (updateUserDto.is_active !== undefined)
+        data.is_active = updateUserDto.is_active;
+
       if (updateUserDto.password) {
         data.password = await bcrypt.hash(updateUserDto.password, 10);
       }
@@ -109,7 +111,10 @@ export class UsersService {
 
       return updatedUser;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException('Usuario no encontrado para actualizar');
       }
       throw error;
@@ -133,7 +138,10 @@ export class UsersService {
 
       return user;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException('Usuario no encontrado para desactivar');
       }
       throw error;
@@ -151,6 +159,7 @@ export class UsersService {
       id: true,
       name: true,
       email: true,
+      base_code: true,
       phone: true,
       role: true,
       is_active: true,
@@ -167,7 +176,7 @@ export class UsersService {
   ): Promise<UserResponseDto> {
     try {
       const data: Prisma.UsersUpdateInput = {};
-      
+
       if (dto.name) data.name = dto.name;
       if (dto.email) data.email = dto.email;
       if (dto.phone !== undefined) data.phone = dto.phone; // Ahora procesa el teléfono mapeado del DTO correctamente
@@ -187,7 +196,10 @@ export class UsersService {
 
       return updatedUser;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException('Perfil de usuario no encontrado');
       }
       throw error;
@@ -204,10 +216,7 @@ export class UsersService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    const isValid = await bcrypt.compare(
-      dto.currentPassword,
-      user.password,
-    );
+    const isValid = await bcrypt.compare(dto.currentPassword, user.password);
 
     if (!isValid) {
       throw new BadRequestException('Contraseña actual incorrecta');
