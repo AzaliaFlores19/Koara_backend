@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -119,8 +120,8 @@ export class UsersController {
   })
   @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Acceso denegado' })
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query('search') search?: string) {
+    return this.usersService.findAll(search);
   }
 
   @Patch('/:id')

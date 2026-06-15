@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { audit_action, entities, Prisma } from '@prisma/client';
+import { audit_action, entities, Prisma, roles } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './create-user-dto';
@@ -57,9 +57,27 @@ export class UsersService {
     return user;
   }
 
-  async findAll(): Promise<UserResponseDto[]> {
+  async findAll(search?: string): Promise<UserResponseDto[]> {
+    const where: Prisma.UsersWhereInput = { is_active: true };
+    const searchTerm = search?.trim();
+
+    if (searchTerm) {
+      const upperSearch = searchTerm.toUpperCase();
+      const matchingRoles = Object.values(roles).filter((role) =>
+        role.includes(upperSearch),
+      );
+
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+        { phone: { contains: searchTerm, mode: 'insensitive' } },
+        { base_code: { contains: searchTerm, mode: 'insensitive' } },
+        ...(matchingRoles.length > 0 ? [{ role: { in: matchingRoles } }] : []),
+      ];
+    }
+
     return this.prisma.users.findMany({
-      where: { is_active: true },
+      where,
       select: this.userSelectWithoutPassword(),
     });
   }

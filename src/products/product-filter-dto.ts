@@ -12,4 +12,8 @@ export class ProductFilterDto {
   @IsOptional()
   @IsString({ message: 'El ID de la categoría debe ser texto.' })
   category_id?: string;
+
+  @IsOptional()
+  @IsString({ message: 'El filtro de busqueda debe ser texto.' })
+  search?: string;
 }
