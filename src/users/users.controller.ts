@@ -5,12 +5,14 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -24,6 +26,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ChangePasswordDto } from './change-password-profile.dto';
 import { UpdateProfileDto } from './update-profile.dto';
+import { UserFilterDto } from './user-filter.dto';
 
 @ApiTags('Usuarios')
 @ApiBearerAuth()
@@ -111,7 +114,8 @@ export class UsersController {
 
   @Get()
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Obtener lista de usuarios activos' })
+  @ApiOperation({ summary: 'Obtener lista de usuarios activos con búsqueda' })
+  @ApiQuery({ name: 'search', required: false, description: 'Buscar por nombre o correo' })
   @ApiResponse({
     status: 200,
     description: 'Lista de usuarios activos',
@@ -119,8 +123,8 @@ export class UsersController {
   })
   @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 403, description: 'Acceso denegado' })
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() filter: UserFilterDto) {
+    return this.usersService.findAll(filter);
   }
 
   @Patch('/:id')

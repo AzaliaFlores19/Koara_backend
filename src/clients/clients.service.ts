@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClientDto } from './create-client.dto';
 import { UpdateClientDto } from './update-client.dto';
+import { ClientFilterDto } from './client-filter.dto';
 import { isUUID } from 'class-validator';
 import { AuditService } from '../audit/audit.service';
 import { audit_action, entities, Prisma } from '@prisma/client';
@@ -46,16 +47,29 @@ export class ClientsService {
     return client;
   }
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(filter: ClientFilterDto) {
+    const page = filter.page ? Math.max(1, parseInt(filter.page)) : 1;
+    const limit = filter.limit ? Math.max(1, parseInt(filter.limit)) : 10;
     const skip = (page - 1) * limit;
+
+    const where: Prisma.ClientsWhereInput = { is_active: true };
+
+    if (filter.search) {
+      where.OR = [
+        { name: { contains: filter.search, mode: 'insensitive' } },
+        { email: { contains: filter.search, mode: 'insensitive' } },
+        { rtn: { contains: filter.search, mode: 'insensitive' } },
+      ];
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.clients.findMany({
-        where: { is_active: true },
+        where,
         skip,
         take: limit,
         orderBy: { created_at: 'desc' },
       }),
-      this.prisma.clients.count({ where: { is_active: true } }),
+      this.prisma.clients.count({ where }),
     ]);
     return { data, total, page, limit };
   }

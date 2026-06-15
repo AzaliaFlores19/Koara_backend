@@ -1,7 +1,7 @@
 import { IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ProductFilterDto {
+export class ClientFilterDto {
   @ApiProperty({ required: false, description: 'Número de página (default: 1)' })
   @IsOptional()
   @IsString({ message: 'La página debe recibirse como texto numérico.' })
@@ -12,12 +12,7 @@ export class ProductFilterDto {
   @IsString({ message: 'El límite debe recibirse como texto numérico.' })
   limit?: string;
 
-  @ApiProperty({ required: false, description: 'Filtrar por ID de categoría' })
-  @IsOptional()
-  @IsString({ message: 'El ID de la categoría debe ser texto.' })
-  category_id?: string;
-
-  @ApiProperty({ required: false, description: 'Buscar por nombre o código de barra' })
+  @ApiProperty({ required: false, description: 'Buscar por nombre, correo o RTN' })
   @IsOptional()
   @IsString({ message: 'La búsqueda debe ser texto.' })
   search?: string;
