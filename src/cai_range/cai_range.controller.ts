@@ -58,6 +58,12 @@ export class CaiRangeController {
     return this.caiRangeService.findActive();
   }
 
+
+  @Get('unique-codes')
+  async getUniqueCodes() {
+    return this.caiRangeService.getUniqueBaseCodes();
+  }
+
   @Get('/:id')
   @Roles('ADMIN', 'EMPLOYEE')
   @ApiOperation({ summary: 'Buscar un rango de CAI específico por su ID' })

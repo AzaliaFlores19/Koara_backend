@@ -105,6 +105,19 @@ export class CaiRangeService {
 
   async updateCaiRange(id: string, dto: UpdateCaiRangeDto, userId: string) {
     const currentRange = await this.findById(id);
+
+    if (dto.range_start || dto.range_end || dto.base_code) {
+      const invoiceCount = await this.prisma.invoices.count({
+        where: { cai_range_id: id },
+      });
+
+      if (invoiceCount > 0) {
+        throw new BadRequestException(
+          'No se pueden modificar los límites numéricos ni el código base de este rango porque ya tiene facturas asociadas.',
+        );
+      }
+    }
+
     const updateRange = { ...currentRange, ...dto };
     const start = updateRange.range_start;
     const end = updateRange.range_end;
@@ -121,6 +134,13 @@ export class CaiRangeService {
     }
 
     if (dto.is_active === true && !currentRange.is_active) {
+      if (new Date() > new Date(currentRange.expiration_date)) {
+        throw new BadRequestException('No se puede activar este rango porque ya expiró su fecha de validez.');
+      }
+      if (currentRange.current_invoice_number > currentRange.range_end) {
+        throw new BadRequestException('No se puede activar este rango porque ya agotó su límite de facturas autorizado.');
+      }
+
       const activeRangeInCaja = await this.prisma.cAI_Range.findFirst({
         where: {
           base_code: baseCode, 
@@ -152,14 +172,24 @@ export class CaiRangeService {
 
   async deactivateCaiRange(id: string, userId: string) {
     const currentRange = await this.findById(id);
-    
     const newActiveStatus = !currentRange.is_active;
 
     if (newActiveStatus === true) {
-      
       if (currentRange.cai?.is_active !== true) {
         throw new BadRequestException(
           'No se puede activar este rango debido a que el código CAI maestro asociado se encuentra inactivo o no existe.',
+        );
+      }
+
+      if (new Date() > new Date(currentRange.expiration_date)) {
+        throw new BadRequestException(
+          'No se puede activar este rango porque ya expiró su fecha de validez.',
+        );
+      }
+
+      if (currentRange.current_invoice_number > currentRange.range_end) {
+        throw new BadRequestException(
+          'No se puede activar este rango porque ya agotó su límite de facturas autorizado.',
         );
       }
 
@@ -193,6 +223,17 @@ export class CaiRangeService {
     return toggledCaiRange;
   }
 
+  async getUniqueBaseCodes(): Promise<string[]> {
+    const ranges = await this.prisma.cAI_Range.findMany({
+      select: {
+        base_code: true,
+      },
+      distinct: ['base_code'], 
+    });
+
+    return ranges.map((r) => r.base_code);
+  }
+
   private async validateOverlapping(
     baseCode: string,
     newStart: number,
@@ -210,11 +251,10 @@ export class CaiRangeService {
         continue;
       }
 
-      const doesOverlap =
-        newStart <= range.range_end && newEnd >= range.range_start;
+      const doesOverlap = newStart <= range.range_end && newEnd >= range.range_start;
       if (doesOverlap) {
         throw new ConflictException(
-          `Conflicto de numeración: Los números del rango se superponen con un rango existente (${range.range_start} - ${range.range_end}) para el punto de emisión ${baseCode}.`,
+          `Conflicto de numeración: Los números del rango se superponen con un rango existente (${range.range_start} - ${range.range_end}) para el punto de emisión ${baseCode}. El nuevo rango debe empezar obligatoriamente después del límite anterior.`,
         );
       }
     }
