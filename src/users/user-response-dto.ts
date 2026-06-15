@@ -20,6 +20,12 @@ export class UserResponseDto {
   })
   email!: string;
 
+  @ApiProperty({
+    description: 'Codigo base del usuario',
+    example: 'ADM-001',
+  })
+  base_code!: string;
+
   @ApiPropertyOptional({
     description: 'Numero de telefono del usuario',
     example: '9999-9999',
