@@ -19,6 +19,7 @@ import {
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './create-client.dto';
 import { UpdateClientDto } from './update-client.dto';
+import { ClientFilterDto } from './client-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -39,13 +40,14 @@ export class ClientsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener lista de clientes paginada' })
+  @ApiOperation({ summary: 'Obtener lista de clientes paginada con búsqueda' })
   @ApiQuery({ name: 'page', required: false, description: 'Número de página (default: 1)' })
   @ApiQuery({ name: 'limit', required: false, description: 'Resultados por página (default: 10)' })
+  @ApiQuery({ name: 'search', required: false, description: 'Buscar por nombre, correo o RTN' })
   @ApiResponse({ status: 200, description: 'Lista de clientes' })
   @ApiResponse({ status: 401, description: 'No autorizado' })
-  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.clientsService.findAll(page ? +page : 1, limit ? +limit : 10);
+  findAll(@Query() filter: ClientFilterDto) {
+    return this.clientsService.findAll(filter);
   }
 
   @Get('/unique-clients')

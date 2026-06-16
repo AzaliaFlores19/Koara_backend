@@ -71,6 +71,13 @@ export class ProductsService {
       where.category_id = filter.category_id;
     }
 
+    if (filter.search) {
+      where.OR = [
+        { name: { contains: filter.search, mode: 'insensitive' } },
+        { code_bar: { contains: filter.search, mode: 'insensitive' } },
+      ];
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.products.findMany({
         where,

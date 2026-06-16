@@ -11,6 +11,7 @@ import { UpdateUserDto } from './update-user-dto';
 import { UpdateProfileDto } from './update-profile.dto';
 import { ChangePasswordDto } from './change-password-profile.dto';
 import { UserResponseDto } from './user-response-dto';
+import { UserFilterDto } from './user-filter.dto';
 import type { Users } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 
@@ -57,9 +58,18 @@ export class UsersService {
     return user;
   }
 
-  async findAll(): Promise<UserResponseDto[]> {
+  async findAll(filter: UserFilterDto): Promise<UserResponseDto[]> {
+    const where: Prisma.UsersWhereInput = { is_active: true };
+
+    if (filter.search) {
+      where.OR = [
+        { name: { contains: filter.search, mode: 'insensitive' } },
+        { email: { contains: filter.search, mode: 'insensitive' } },
+      ];
+    }
+
     return this.prisma.users.findMany({
-      where: { is_active: true },
+      where,
       select: this.userSelectWithoutPassword(),
     });
   }
