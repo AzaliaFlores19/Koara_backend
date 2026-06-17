@@ -10,7 +10,8 @@ type ReportType =
   | 'top-products'
   | 'frequent-customers'
   | 'monthly-sales'
-  | 'customer-history';
+  | 'customer-history'
+  | 'analytics';
 
 type ReportFilters = {
   startDate?: string;
@@ -50,6 +51,8 @@ const LOGO_PATHS = [
 ];
 
 const FIELD_LABELS: Record<string, string> = {
+  averagePerClient: 'Promedio por cliente',
+  averagePerInvoice: 'Promedio por factura',
   category: 'Categoría',
   clientName: 'Cliente',
   createdAt: 'Fecha',
@@ -61,6 +64,7 @@ const FIELD_LABELS: Record<string, string> = {
   invoiceNumber: 'Número de factura',
   invoiceTotal: 'Total de factura',
   invoices: 'Facturas',
+  invoicesPerClient: 'Facturas por cliente',
   items: 'Artículos',
   lastPurchase: 'Última compra',
   limit: 'Límite',
@@ -75,10 +79,11 @@ const FIELD_LABELS: Record<string, string> = {
   revenue: 'Ingresos',
   startDate: 'Fecha inicial',
   subtotal: 'Subtotal',
+  taxesCollected: 'Impuestos recaudados',
   total: 'Total',
-  totalAfterTax: 'Total después de impuesto',
-  totalBeforeTax: 'Total antes de impuesto',
-  totalInvoices: 'Facturas',
+  totalAfterTax: 'Ventas (Después de impuestos)',
+  totalBeforeTax: 'Ventas (Antes de impuestos)',
+  totalInvoices: 'Total de facturas emitidas',
   totalSales: 'Total de ventas',
   totalSpent: 'Total gastado',
   uniqueClients: 'Clientes únicos',
@@ -137,6 +142,7 @@ export class ReportsExportService {
       'frequent-customers',
       'monthly-sales',
       'customer-history',
+      'analytics',
     ];
 
     if (reportTypes.includes(reportType as ReportType)) {
@@ -234,6 +240,33 @@ export class ReportsExportService {
           products: rows.length,
           quantitySold: this.sumRows(rows, 'quantitySold'),
           revenue: this.sumRows(rows, 'revenue'),
+        },
+      };
+    }
+
+    if (reportType === 'analytics') {
+      const data = await this.reportsService.getAnalytics(
+        filters.startDate!,
+        filters.endDate!,
+      );
+      
+      return {
+        title: 'Reporte de Analytics',
+        filenameSlug: 'analytics',
+        rows: [
+          {
+            averagePerInvoice: data.average_per_invoice,
+            averagePerClient: data.average_per_client,
+            taxesCollected: data.taxes_collected,
+            invoicesPerClient: data.invoices_per_client,
+          },
+        ],
+        filters: this.dateFilters(filters),
+        summary: {
+          totalInvoices: data.total_invoices,
+          totalBeforeTax: data.total_before_tax,
+          totalAfterTax: data.total_after_tax,
+          uniqueClients: data.unique_clients,
         },
       };
     }

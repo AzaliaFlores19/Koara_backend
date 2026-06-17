@@ -13,6 +13,7 @@ import { ReportsExportService } from './reports-export.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { AnalyticsResponseDto } from './dto/analytics-response.dto';
 
 @ApiTags('Reportes')
 @ApiBearerAuth()
@@ -24,6 +25,43 @@ export class ReportsController {
     private readonly reportsService: ReportsService,
     private readonly reportsExportService: ReportsExportService,
   ) {}
+
+  @Get('analytics')
+  @ApiOperation({ summary: 'Obtener analytics de ventas y clientes' })
+  @ApiQuery({ name: 'startDate', required: true, example: '2024-01-01' })
+  @ApiQuery({ name: 'endDate', required: true, example: '2024-12-31' })
+  @ApiResponse({ status: 200, description: 'Datos de analytics', type: AnalyticsResponseDto })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  getAnalytics(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.reportsService.getAnalytics(startDate, endDate);
+  }
+
+  @Get('analytics/export')
+  @ApiOperation({ summary: 'Exportar analytics de ventas y clientes' })
+  @ApiQuery({ name: 'format', required: true, enum: ['pdf', 'csv'], description: 'Formato de exportación' })
+  @ApiQuery({ name: 'startDate', required: true, example: '2024-01-01' })
+  @ApiQuery({ name: 'endDate', required: true, example: '2024-12-31' })
+  @ApiResponse({ status: 200, description: 'Archivo exportado (PDF o CSV)' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  async exportAnalytics(
+    @Query('format') format: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Res() response: Response,
+  ) {
+    const file = await this.reportsExportService.exportReport(
+      'analytics',
+      format,
+      { startDate, endDate },
+    );
+
+    this.sendFile(response, file);
+  }
 
   @Get('sales')
   @ApiOperation({ summary: 'Obtener reporte de ventas por rango de fechas' })
@@ -126,7 +164,7 @@ export class ReportsController {
 
   @Get(':reportType/export')
   @ApiOperation({ summary: 'Exportar cualquier reporte' })
-  @ApiParam({ name: 'reportType', description: 'Tipo de reporte', enum: ['sales', 'top-products', 'frequent-customers', 'monthly-sales', 'customer-history'] })
+  @ApiParam({ name: 'reportType', description: 'Tipo de reporte', enum: ['sales', 'top-products', 'frequent-customers', 'monthly-sales', 'customer-history', 'analytics'] })
   @ApiQuery({ name: 'format', required: true, enum: ['pdf', 'csv'], description: 'Formato de exportación' })
   @ApiQuery({ name: 'startDate', required: false, example: '2024-01-01' })
   @ApiQuery({ name: 'endDate', required: false, example: '2024-12-31' })

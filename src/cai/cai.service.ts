@@ -95,14 +95,22 @@ export class CaiService {
       }
     }
 
-    const updatedCai = await this.prisma.cAI.update({
-      where: { id },
-      data: dto,
+    return await this.prisma.$transaction(async (tx) => {
+      const updatedCai = await tx.cAI.update({
+        where: { id },
+        data: dto,
+      });
+
+      if (dto.is_active === false) {
+        await tx.cAI_Range.updateMany({
+          where: { cai_id: id },
+          data: { is_active: false },
+        });
+      }
+
+      await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
+      return updatedCai;
     });
-
-    await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
-
-    return updatedCai;
   }
 
   async deactivateCai(id: string, userId: string) {
@@ -124,18 +132,21 @@ export class CaiService {
       }
     }
 
-    const toggledCai = await this.prisma.cAI.update({
-      where: { id },
-      data: { is_active: newActiveStatus },
+    return await this.prisma.$transaction(async (tx) => {
+      const toggledCai = await tx.cAI.update({
+        where: { id },
+        data: { is_active: newActiveStatus },
+      });
+
+      if (newActiveStatus === false) {
+        await tx.cAI_Range.updateMany({
+          where: { cai_id: id },
+          data: { is_active: false },
+        });
+      }
+
+      await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
+      return toggledCai;
     });
-
-    await this.auditService.createLog(
-      userId,
-      entities.CAI,
-      id,
-      audit_action.UPDATE,
-    );
-
-    return toggledCai;
   }
 }

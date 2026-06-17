@@ -22,6 +22,7 @@ import { UpdateProductDto } from './update-product-dto';
 import { ProductFilterDto } from './product-filter-dto';
 import { StockDto } from './stock-dto';
 import { StockThresholdDto } from './stock-threshold-dto';
+import { TopSellingProductDto } from './top-selling-product-dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -70,6 +71,24 @@ export class ProductsController {
   @ApiResponse({ status: 403, description: 'Acceso denegado' })
   findAll(@Query() filter: ProductFilterDto) {
     return this.productsService.findAll(filter);
+  }
+
+  @Get('/top-selling')
+  @ApiOperation({ summary: 'Obtener los productos más vendidos' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Cantidad de productos a retornar (default: 10)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de productos más vendidos',
+    type: [TopSellingProductDto],
+  })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  getTopSelling(@Query('limit') limit?: string) {
+    return this.productsService.getTopSelling(limit ? +limit : 10);
   }
 
   @Get('/low-stock')
