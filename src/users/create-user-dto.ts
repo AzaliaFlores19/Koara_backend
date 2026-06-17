@@ -35,18 +35,6 @@ export class CreateUserDto {
   )
   email!: string;
 
-  @ApiProperty({
-    description: 'Codigo base del usuario para identificacion',
-    example: 'ADM-001',
-  })
-  @IsString({
-    message: 'El codigo base debe ser texto',
-  })
-  @IsNotEmpty({
-    message: 'El codigo base es obligatorio',
-  })
-  base_code!: string;
-
   @ApiPropertyOptional({
     description: 'Numero de telefono del usuario',
     example: '9999-9999',

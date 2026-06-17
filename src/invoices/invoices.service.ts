@@ -46,12 +46,11 @@ export class InvoicesService {
 
       const caiRange = await tx.cAI_Range.findFirst({
         where: {
-          base_code: user.base_code,
           is_active: true,
         },
       });
       if (!caiRange) {
-        throw new NotFoundException('Rango CAI no encontrado para este usuario');
+        throw new NotFoundException('No se encontró un rango CAI activo');
       }
 
       const client = await tx.clients.findUnique({

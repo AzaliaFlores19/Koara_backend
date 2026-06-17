@@ -10,7 +10,6 @@ model Users {
   id                    String               @id @default(uuid()) @db.Uuid
   name                  String               @db.VarChar(50)
   email                 String               @unique
-  base_code             String               @unique
   phone                 String?
   password              String
   role                  roles

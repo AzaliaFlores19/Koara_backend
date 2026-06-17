@@ -52,7 +52,6 @@ async function main() {
     data: {
       name: 'Ana Martínez',
       email: 'admin@glamour.hn',
-      base_code: 'ADM-001',
       phone: '+504 9999-1111',
       password: 'password_seguro_hash', // Cambiar por hash real
       role: 'ADMIN',
@@ -63,7 +62,6 @@ async function main() {
     data: {
       name: 'Carlos López',
       email: 'carlos.vendedor@glamour.hn',
-      base_code: 'EMP-002',
       phone: '+504 8888-2222',
       password: 'password_seguro_hash_2', // Cambiar por hash real
       role: 'EMPLOYEE',
