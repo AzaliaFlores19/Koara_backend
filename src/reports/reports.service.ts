@@ -136,6 +136,60 @@ export class ReportsService {
     };
   }
 
+  async getAnalytics(startDate: string, endDate: string) {
+    const { start, end } = this.getStartAndEndDates(startDate, endDate);
+
+    const invoices = await this.prisma.invoices.findMany({
+      where: {
+        created_at: {
+          gte: start,
+          lte: end,
+        },
+      },
+      select: {
+        client_id: true,
+        subtotal: true,
+        taxes: true,
+        total: true,
+      },
+    });
+
+    const total_invoices = invoices.length;
+    const total_before_tax = invoices.reduce(
+      (sum, inv) => sum + inv.subtotal.toNumber(),
+      0,
+    );
+    const total_after_tax = invoices.reduce(
+      (sum, inv) => sum + inv.total.toNumber(),
+      0,
+    );
+    const taxes_collected = invoices.reduce(
+      (sum, inv) => sum + inv.taxes.toNumber(),
+      0,
+    );
+    const unique_clients = new Set(
+      invoices.map((inv) => inv.client_id).filter(Boolean),
+    ).size;
+
+    const average_per_invoice =
+      total_invoices > 0 ? total_after_tax / total_invoices : 0;
+    const average_per_client =
+      unique_clients > 0 ? total_after_tax / unique_clients : 0;
+    const invoices_per_client =
+      unique_clients > 0 ? total_invoices / unique_clients : 0;
+
+    return {
+      total_invoices,
+      total_before_tax,
+      total_after_tax,
+      unique_clients,
+      average_per_invoice,
+      average_per_client,
+      taxes_collected,
+      invoices_per_client,
+    };
+  }
+
   async getTopSellingProducts(
     limit: number,
     range: { startDate: string; endDate: string },

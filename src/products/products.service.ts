@@ -366,4 +366,60 @@ export class ProductsService {
     });
     return products.filter((p) => p.stock <= p.min_stock);
   }
+
+  async getTopSelling(limit: number = 10) {
+    const fourMonthsAgo = new Date();
+    fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4);
+
+    const grouped = await this.prisma.invoice_Product.groupBy({
+      by: ['product_id'],
+      _sum: { quantity: true },
+      where: {
+        invoice: {
+          created_at: {
+            gte: fourMonthsAgo, 
+          },
+        },
+      },
+      orderBy: { _sum: { quantity: 'desc' } },
+      take: limit,
+    });
+
+    const productIds = grouped
+      .map((g) => g.product_id)
+      .filter(Boolean) as string[];
+
+    const products = await this.prisma.products.findMany({
+      where: { id: { in: productIds } },
+      select: {
+        id: true,
+        name: true,
+        code_bar: true,
+        image: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    return grouped
+      .map((g) => {
+        const product = productMap.get(g.product_id!);
+        if (!product) return null;
+        return {
+          id: product.id,
+          name: product.name,
+          code_bar: product.code_bar,
+          image: product.image,
+          category: product.category,
+          total_quantity_sold: g._sum.quantity ?? 0,
+        };
+      })
+      .filter(Boolean);
+  }
 }
