@@ -14,30 +14,23 @@ export class CaiService {
 
   async create(createCaiDto: CreateCaiDto, userId: string) {
     const existingCai = await this.prisma.cAI.findUnique({
-        where: { cai_code: createCaiDto.cai_code },
+      where: { cai_code: createCaiDto.cai_code },
     });
     if (existingCai) {
-        throw new ConflictException('El código CAI ya existe.');
+      throw new ConflictException('El código CAI ya existe.');
     }
 
-    const activeCai = await this.prisma.cAI.findFirst({
-      where: { is_active: true }
-    });
-    if (activeCai) {
-      throw new ConflictException(
-        `Ya existe un código CAI activo (${activeCai.cai_code}). Debes desactivarlo antes de crear o activar uno nuevo.`
-      );
-    }
+    const totalCaisCount = await this.prisma.cAI.count();
+    const initialActiveStatus = totalCaisCount === 0;
 
     const cai = await this.prisma.cAI.create({
       data: {
         cai_code: createCaiDto.cai_code,
-        is_active: true,
+        is_active: initialActiveStatus,
       },
     });
 
     await this.auditService.createLog(userId, entities.CAI, cai.id, audit_action.CREATE);
-
     return cai;
   }
 
@@ -64,7 +57,7 @@ export class CaiService {
         },
       });
       if (duplicateCai) {
-        throw new ConflictException('El código CAI ya está en uso por otro registro.');
+        throw new ConflictException('El código CAI ya existe.');
       }
 
       const subRanges = await this.prisma.cAI_Range.findMany({ where: { cai_id: id } });
@@ -76,41 +69,36 @@ export class CaiService {
         });
 
         if (invoicesLinked > 0) {
-          throw new BadRequestException('No se puede alterar el código textual del CAI maestro porque ya contiene transacciones comerciales emitidas en su historial.');
+          throw new BadRequestException('No se puede alterar el código del CAI maestro porque ya contiene transacciones comerciales emitidas en su historial.');
         }
       }
     }
 
     if (dto.is_active === true && !currentCai.is_active) {
       const activeCai = await this.prisma.cAI.findFirst({
-        where: {
-          is_active: true,
-          id: { not: id }
-        }
+        where: { is_active: true, id: { not: id } }
       });
       if (activeCai) {
-        throw new ConflictException(
-          `No puedes activar este CAI porque el código ${activeCai.cai_code} ya se encuentra activo actualmente.`
-        );
+        throw new ConflictException(`No puedes activar este CAI porque el código ${activeCai.cai_code} ya se encuentra activo actualmente.`);
       }
     }
 
-    return await this.prisma.$transaction(async (tx) => {
-      const updatedCai = await tx.cAI.update({
-        where: { id },
-        data: dto,
+    if (dto.is_active === false && currentCai.is_active) {
+      const activeRangesCount = await this.prisma.cAI_Range.count({
+        where: { cai_id: id, is_active: true }
       });
-
-      if (dto.is_active === false) {
-        await tx.cAI_Range.updateMany({
-          where: { cai_id: id },
-          data: { is_active: false },
-        });
+      if (activeRangesCount > 0) {
+        throw new BadRequestException('No puedes desactivar este Código CAI porque tiene un Rango de Facturación ACTIVO asociado. Activa el nuevo rango de reemplazo en su lugar.');
       }
+    }
 
-      await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
-      return updatedCai;
+    const updatedCai = await this.prisma.cAI.update({
+      where: { id },
+      data: dto,
     });
+
+    await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
+    return updatedCai;
   }
 
   async deactivateCai(id: string, userId: string) {
@@ -119,34 +107,26 @@ export class CaiService {
 
     if (newActiveStatus === true) {
       const activeCai = await this.prisma.cAI.findFirst({
-        where: {
-          is_active: true,
-          id: { not: id }, 
-        },
+        where: { is_active: true, id: { not: id } },
       });
-
       if (activeCai) {
-        throw new ConflictException(
-          `No puedes activar este código CAI debido a que ya se encuentra activo el código ${activeCai.cai_code}. Desactívalo primero.`
-        );
+        throw new ConflictException(`No puedes activar este código CAI debido a que ya se encuentra activo el código ${activeCai.cai_code}.`);
+      }
+    } else {
+      const activeRangesCount = await this.prisma.cAI_Range.count({
+        where: { cai_id: id, is_active: true }
+      });
+      if (activeRangesCount > 0) {
+        throw new BadRequestException('No puedes desactivar este Código CAI porque tiene un Rango de Facturación ACTIVO asociado. Activa el nuevo rango de reemplazo en su lugar.');
       }
     }
 
-    return await this.prisma.$transaction(async (tx) => {
-      const toggledCai = await tx.cAI.update({
-        where: { id },
-        data: { is_active: newActiveStatus },
-      });
-
-      if (newActiveStatus === false) {
-        await tx.cAI_Range.updateMany({
-          where: { cai_id: id },
-          data: { is_active: false },
-        });
-      }
-
-      await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
-      return toggledCai;
+    const toggledCai = await this.prisma.cAI.update({
+      where: { id },
+      data: { is_active: newActiveStatus },
     });
+
+    await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
+    return toggledCai;
   }
 }

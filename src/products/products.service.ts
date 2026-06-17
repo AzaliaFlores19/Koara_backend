@@ -375,8 +375,8 @@ export class ProductsService {
   }
 
   async getTopSelling(limit: number = 10) {
-    const fourMonthsAgo = new Date();
-    fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const grouped = await this.prisma.invoice_Product.groupBy({
       by: ['product_id'],
@@ -384,7 +384,7 @@ export class ProductsService {
       where: {
         invoice: {
           created_at: {
-            gte: fourMonthsAgo, 
+            gte: startOfMonth, 
           },
         },
       },
