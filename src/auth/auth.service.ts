@@ -100,7 +100,6 @@ export class AuthService {
         name: registerDto.name,
         email: registerDto.email,
         password: hashedPassword,
-        base_code: '',
         phone: registerDto.phone,
         role: registerDto.role,
       },

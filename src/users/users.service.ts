@@ -40,7 +40,6 @@ export class UsersService {
       data: {
         name: createUserDto.name,
         email: createUserDto.email,
-        base_code: createUserDto.base_code,
         phone: createUserDto.phone,
         password: hashedPassword,
         role: createUserDto.role,
@@ -96,7 +95,6 @@ export class UsersService {
 
       if (updateUserDto.name) data.name = updateUserDto.name;
       if (updateUserDto.email) data.email = updateUserDto.email;
-      if (updateUserDto.base_code) data.base_code = updateUserDto.base_code;
       if (updateUserDto.phone !== undefined) data.phone = updateUserDto.phone;
       if (updateUserDto.role) data.role = updateUserDto.role;
       if (updateUserDto.is_active !== undefined)
@@ -169,7 +167,6 @@ export class UsersService {
       id: true,
       name: true,
       email: true,
-      base_code: true,
       phone: true,
       role: true,
       is_active: true,
