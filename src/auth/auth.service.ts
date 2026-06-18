@@ -225,7 +225,7 @@ export class AuthService {
   }
 
   private buildResetLink(token: string) {
-    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
-    return `${frontendUrl}/reset-password?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+    return `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
   }
 }
