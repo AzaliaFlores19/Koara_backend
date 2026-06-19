@@ -179,10 +179,16 @@ export class ClientsService {
 
   async history(id: string) {
     await this.findById(id);
-    return this.prisma.invoices.findMany({
+    
+    const invoices = await this.prisma.invoices.findMany({
       where: { client_id: id },
       include: { invoice_items: { include: { product: true } } },
       orderBy: { created_at: 'desc' },
     });
+
+    return invoices.map((inv) => ({
+      ...inv,
+      created_at: new Date(inv.created_at.getTime() - 6 * 60 * 60 * 1000),
+    }));
   }
 }

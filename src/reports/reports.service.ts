@@ -11,17 +11,17 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Helper privado para estirar el rango de fechas.
-   * Ajusta el inicio a las 00:00:00.000 y el fin a las 23:59:59.999 en formato UTC.
+   * Helper privado para estirar el rango de fechas adaptado a Centroamérica (UTC-6).
+   * Desplaza el rango para que busque correctamente en la base de datos UTC.
    */
   private getStartAndEndDates(startDate: string, endDate: string) {
-    const start = new Date(startDate);
-    start.setUTCHours(0, 0, 0, 0);
+    const start = new Date(`${startDate.split('T')[0]}T00:00:00`);
+    const end = new Date(`${endDate.split('T')[0]}T23:59:59.999`);
 
-    const end = new Date(endDate);
-    end.setUTCHours(23, 59, 59, 999);
+    const startUTC = new Date(start.getTime() + 6 * 60 * 60 * 1000);
+    const endUTC = new Date(end.getTime() + 6 * 60 * 60 * 1000);
 
-    return { start, end };
+    return { start: startUTC, end: endUTC };
   }
 
   async getSalesByDateRange(startDate: string, endDate: string) {
@@ -29,10 +29,7 @@ export class ReportsService {
 
     const invoices = await this.prisma.invoices.findMany({
       where: {
-        created_at: {
-          gte: start,
-          lte: end,
-        },
+        created_at: { gte: start, lte: end },
       },
       select: {
         created_at: true,
@@ -53,7 +50,9 @@ export class ReportsService {
     >();
 
     for (const invoice of invoices) {
-      const day = invoice.created_at.toISOString().split('T')[0];
+      const localDate = new Date(invoice.created_at.getTime() - 6 * 60 * 60 * 1000);
+      const day = localDate.toISOString().split('T')[0];
+
       const entry = dailyMap.get(day);
       if (entry) {
         entry.total_sales += invoice.total.toNumber();
@@ -79,12 +78,9 @@ export class ReportsService {
 
     const { start, end } = this.getStartAndEndDates(startDate, endDate);
 
-    return this.prisma.invoices.findMany({
+    const invoices = await this.prisma.invoices.findMany({
       where: {
-        created_at: {
-          gte: start,
-          lte: end,
-        },
+        created_at: { gte: start, lte: end },
         ...(clientId ? { client_id: clientId } : {}),
       },
       select: {
@@ -96,6 +92,11 @@ export class ReportsService {
       },
       orderBy: { created_at: 'desc' },
     });
+
+    return invoices.map((inv) => ({
+      ...inv,
+      created_at: new Date(inv.created_at.getTime() - 6 * 60 * 60 * 1000),
+    }));
   }
 
   async getSalesOverview(startDate: string, endDate: string) {
@@ -103,10 +104,7 @@ export class ReportsService {
 
     const invoices = await this.prisma.invoices.findMany({
       where: {
-        created_at: {
-          gte: start,
-          lte: end,
-        },
+        created_at: { gte: start, lte: end },
       },
       select: {
         client_id: true,
@@ -141,10 +139,7 @@ export class ReportsService {
 
     const invoices = await this.prisma.invoices.findMany({
       where: {
-        created_at: {
-          gte: start,
-          lte: end,
-        },
+        created_at: { gte: start, lte: end },
       },
       select: {
         client_id: true,
@@ -200,10 +195,7 @@ export class ReportsService {
       by: ['product_id'],
       where: {
         invoice: {
-          created_at: {
-            gte: start,
-            lte: end,
-          },
+          created_at: { gte: start, lte: end },
         },
       },
       _sum: { quantity: true, item_subtotal: true },
@@ -262,12 +254,19 @@ export class ReportsService {
 
     const clientMap = new Map(clients.map((c) => [c.id, c]));
 
-    return grouped.map((g) => ({
-      client: clientMap.get(g.client_id),
-      invoice_count: g._count.id,
-      total_spent: g._sum.total?.toNumber() ?? 0,
-      last_purchase: g._max.created_at,
-    }));
+    return grouped.map((g) => {
+      const rawLastPurchase = g._max.created_at;
+      const localLastPurchase = rawLastPurchase 
+        ? new Date(rawLastPurchase.getTime() - 6 * 60 * 60 * 1000) 
+        : null;
+
+      return {
+        client: clientMap.get(g.client_id),
+        invoice_count: g._count.id,
+        total_spent: g._sum.total?.toNumber() ?? 0,
+        last_purchase: localLastPurchase,
+      };
+    });
   }
 
   async getCustomerPurchaseHistory(customerId: string) {
@@ -277,12 +276,7 @@ export class ReportsService {
 
     const client = await this.prisma.clients.findUnique({
       where: { id: customerId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-      },
+      select: { id: true, name: true, email: true, phone: true },
     });
     if (!client) {
       throw new NotFoundException('Cliente no encontrado');
@@ -301,18 +295,18 @@ export class ReportsService {
             quantity: true,
             unit_price: true,
             item_subtotal: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            product: { select: { id: true, name: true } },
           },
         },
       },
       orderBy: { created_at: 'desc' },
     });
 
-    return { client, invoices };
+    const adjustedInvoices = invoices.map((inv) => ({
+      ...inv,
+      created_at: new Date(inv.created_at.getTime() - 6 * 60 * 60 * 1000),
+    }));
+
+    return { client, invoices: adjustedInvoices };
   }
 }
