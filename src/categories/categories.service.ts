@@ -22,12 +22,14 @@ export class CategoriesService {
     user_id: string,
     entity_id: string,
     action: audit_action,
+    detail?: string,
   ) {
     await this.auditService.createLog(
       user_id,
       entities.CATEGORY,
       entity_id,
       action,
+      detail,
     );
   }
 
@@ -39,7 +41,7 @@ export class CategoriesService {
       throw new ConflictException('El nombre de la categoría ya existe.');
 
     const category = await this.prisma.categories.create({ data: dto });
-    await this.createAuditLog(user_id, category.id, 'CREATE');
+    await this.createAuditLog(user_id, category.id, 'CREATE', category.name);
     return category;
   }
 
@@ -88,7 +90,7 @@ export class CategoriesService {
       where: { id },
       data: dto,
     });
-    await this.createAuditLog(user_id, id, 'UPDATE');
+    await this.createAuditLog(user_id, id, 'UPDATE', category.name);
     return category;
   }
 
@@ -113,7 +115,7 @@ export class CategoriesService {
     data: { is_active: false },
   });
   
-  await this.createAuditLog(user_id, id, 'DEACTIVATE');
+  await this.createAuditLog(user_id, id, 'DEACTIVATE', category.name);
   return category;
 }
 }

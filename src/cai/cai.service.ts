@@ -30,7 +30,7 @@ export class CaiService {
       },
     });
 
-    await this.auditService.createLog(userId, entities.CAI, cai.id, audit_action.CREATE);
+    await this.auditService.createLog(userId, entities.CAI, cai.id, audit_action.CREATE, cai.cai_code);
     return cai;
   }
 
@@ -97,7 +97,7 @@ export class CaiService {
       data: dto,
     });
 
-    await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
+    await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE, updatedCai.cai_code);
     return updatedCai;
   }
 
@@ -126,7 +126,7 @@ export class CaiService {
       data: { is_active: newActiveStatus },
     });
 
-    await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE);
+    await this.auditService.createLog(userId, entities.CAI, id, audit_action.UPDATE, toggledCai.cai_code);
     return toggledCai;
   }
 }

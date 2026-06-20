@@ -116,6 +116,7 @@ model Audit_Logs {
   user_id    String       @db.Uuid
   entity     entities
   entity_id  String       @db.Uuid
+  detail     String?
   action     audit_action
   created_at DateTime     @default(now()) @db.Timestamptz(6)
   user       Users        @relation(fields: [user_id], references: [id])

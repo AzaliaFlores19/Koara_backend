@@ -66,6 +66,7 @@ export class CaiRangeService {
       entities.CAI_RANGE,
       caiRange.id,
       audit_action.CREATE,
+      `Rango ${caiRange.range_start}-${caiRange.range_end}`,
     );
 
     return caiRange;
@@ -154,7 +155,13 @@ export class CaiRangeService {
       },
     });
 
-    await this.auditService.createLog(userId, entities.CAI_RANGE, id, audit_action.UPDATE);
+    await this.auditService.createLog(
+      userId,
+      entities.CAI_RANGE,
+      id,
+      audit_action.UPDATE,
+      `Rango ${currentRange.range_start}-${currentRange.range_end}`,
+    );
     return updatedCaiRange;
   }
 
@@ -188,7 +195,13 @@ export class CaiRangeService {
         });
       });
 
-      await this.auditService.createLog(userId, entities.CAI_RANGE, id, audit_action.UPDATE);
+      await this.auditService.createLog(
+        userId,
+        entities.CAI_RANGE,
+        id,
+        audit_action.UPDATE,
+        `Rango ${currentRange.range_start}-${currentRange.range_end}`,
+      );
       return toggled;
     }
 
@@ -204,7 +217,13 @@ export class CaiRangeService {
       data: { is_active: newActiveStatus },
     });
 
-    await this.auditService.createLog(userId, entities.CAI_RANGE, id, audit_action.UPDATE);
+    await this.auditService.createLog(
+      userId,
+      entities.CAI_RANGE,
+      id,
+      audit_action.UPDATE,
+      `Rango ${currentRange.range_start}-${currentRange.range_end}`,
+    );
     return toggledCaiRange;
   }
 

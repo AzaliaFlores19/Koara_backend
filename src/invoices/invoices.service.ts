@@ -158,6 +158,7 @@ export class InvoicesService {
         entities.INVOICES,
         invoice.id,
         audit_action.CREATE,
+        `Factura ${invoice.invoice_number}`,
       );
 
       const {
@@ -312,6 +313,7 @@ export class InvoicesService {
         entities.INVOICES,
         invoice.id,
         audit_action.DEACTIVATE,
+        `Factura ${invoice.invoice_number}`,
       );
 
       return deletedInvoice;

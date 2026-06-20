@@ -13,6 +13,7 @@ export class AuditService {
     entity: entities,
     entityId: string,
     action: audit_action,
+    detail?: string,
   ) {
     return this.prisma.audit_Logs.create({
       data: {
@@ -20,6 +21,7 @@ export class AuditService {
         entity,
         entity_id: entityId,
         action,
+        detail,
       },
     });
   }

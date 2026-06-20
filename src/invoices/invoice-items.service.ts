@@ -69,6 +69,7 @@ export class InvoiceItemsService {
         entities.INVOICE_PRODUCTS,
         invoiceProduct.id,
         audit_action.CREATE,
+        `${product.name} x${item.quantity}`,
       );
     }
 
@@ -93,6 +94,7 @@ export class InvoiceItemsService {
   ) {
     const items = await tx.invoice_Product.findMany({
       where: { invoice_id: invoiceId },
+      include: { product: true },
     });
 
     const result = await tx.invoice_Product.deleteMany({
@@ -105,6 +107,9 @@ export class InvoiceItemsService {
         entities.INVOICE_PRODUCTS,
         item.id,
         audit_action.DEACTIVATE,
+        item.product
+          ? `${item.product.name} x${item.quantity}`
+          : undefined,
       );
     }
 

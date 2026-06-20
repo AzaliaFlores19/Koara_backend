@@ -78,6 +78,7 @@ export class AuthService {
       entities.USERS,
       user.id,
       audit_action.LOGIN,
+      user.name,
     );
 
     return {
@@ -125,6 +126,7 @@ export class AuthService {
       entities.USERS,
       newUser.id,
       audit_action.CREATE,
+      newUser.name,
     );
 
     return {
@@ -213,6 +215,7 @@ export class AuthService {
       entities.USERS,
       passwordResetToken.user_id,
       audit_action.UPDATE,
+      'Restablecimiento de contraseña',
     );
 
     return {
