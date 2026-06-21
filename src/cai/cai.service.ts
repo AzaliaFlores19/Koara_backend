@@ -41,8 +41,20 @@ export class CaiService {
         },
       });
 
-      await this.auditService.createLog(userId, entities.CAI, cai.id, audit_action.CREATE);
-      await this.auditService.createLog(userId, entities.CAI_RANGE, range.id, audit_action.CREATE);
+      await this.auditService.createLog(
+        userId,
+        entities.CAI,
+        cai.id,
+        audit_action.CREATE,
+        `CAI ${cai.cai_code}`,
+      );
+      await this.auditService.createLog(
+        userId,
+        entities.CAI_RANGE,
+        range.id,
+        audit_action.CREATE,
+        `Rango ${range.range_start}-${range.range_end}`,
+      );
 
       return { cai, range };
     });
@@ -121,7 +133,13 @@ export class CaiService {
         : await tx.cAI.findUnique({ where: { id: caiId } });
 
       if (dto.cai_code) {
-        await this.auditService.createLog(userId, entities.CAI, caiId, audit_action.UPDATE);
+        await this.auditService.createLog(
+          userId,
+          entities.CAI,
+          caiId,
+          audit_action.UPDATE,
+          `CAI ${dto.cai_code}`,
+        );
       }
 
       const rangeResult = (dto.range_start || dto.range_end || dto.expiration_date)
@@ -136,7 +154,13 @@ export class CaiService {
         : await tx.cAI_Range.findUnique({ where: { id: rangeId } });
 
       if (dto.range_start || dto.range_end || dto.expiration_date) {
-        await this.auditService.createLog(userId, entities.CAI_RANGE, rangeId, audit_action.UPDATE);
+        await this.auditService.createLog(
+          userId,
+          entities.CAI_RANGE,
+          rangeId,
+          audit_action.UPDATE,
+          `Rango ${dto.range_start ?? currentRange.range_start}-${dto.range_end ?? currentRange.range_end}`,
+        );
       }
 
       return { cai: caiResult, range: rangeResult };
