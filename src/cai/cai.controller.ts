@@ -9,8 +9,8 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { CaiService } from './cai.service';
-import { CreateCaiDto } from './create-cai-dto';
-import { UpdateCaiDto } from './update-cai-dto';
+import { CreateCaiWithRangeDto } from './create-cai-dto';
+import { UpdateCaiWithRangeDto } from './update-cai-dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -25,17 +25,36 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@ne
 export class CaiController {
   constructor(private readonly caiService: CaiService) {}
 
-  @Post()
+  @Post('with-range')
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Registrar un nuevo código CAI autorizado por la SAR' })
-  @ApiResponse({ status: 201, description: 'Código CAI registrado con éxito.' })
+  @ApiOperation({ summary: 'Registrar un nuevo bloque de facturación completo (CAI + Rango) y activarlo de inmediato' })
+  @ApiResponse({ status: 201, description: 'Bloque unificado registrado y activado con éxito (Relevo automático completado).' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos o inconsistencias matemáticas en el rango/fechas.' })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos o formato de CAI incorrecto.' })
-  create(
-    @Body() createCaiDto: CreateCaiDto,
+  @ApiResponse({ status: 409, description: 'El código CAI ya existe en el historial del sistema.' })
+  createUnified(
+    @Body() dto: CreateCaiWithRangeDto,
     @CurrentUser('id') userId: string,
   ) {
-    return this.caiService.create(createCaiDto, userId);
+    return this.caiService.createWithRange(dto, userId);
+  }
+
+  @Patch('with-range/:caiId/:rangeId')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Modificar los datos de un bloque de facturación existente (Solo si no cuenta con facturas emitidas)' })
+  @ApiParam({ name: 'caiId', description: 'ID único (UUID) del registro CAI maestro' })
+  @ApiParam({ name: 'rangeId', description: 'ID único (UUID) del rango de facturación asociado' })
+  @ApiResponse({ status: 200, description: 'Bloque de facturación modificado correctamente.' })
+  @ApiResponse({ status: 400, description: 'Solicitud inválida o el bloque ya cuenta con transacciones comerciales asociadas.' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
+  @ApiResponse({ status: 404, description: 'El registro del CAI o del Rango no fue localizado.' })
+  updateUnified(
+    @Param('caiId', ParseUUIDPipe) caiId: string,
+    @Param('rangeId', ParseUUIDPipe) rangeId: string,
+    @Body() dto: UpdateCaiWithRangeDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.caiService.updateWithRange(caiId, rangeId, dto, userId);
   }
 
   @Get()
@@ -57,35 +76,5 @@ export class CaiController {
   @ApiResponse({ status: 404, description: 'Código CAI no encontrado.' })
   findById(@Param('id', ParseUUIDPipe) id: string) {
     return this.caiService.findById(id);
-  }
-
-  @Patch('/:id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Modificar la información de un código CAI existente' })
-  @ApiResponse({ status: 200, description: 'Código CAI actualizado correctamente.' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos o formato de CAI incorrecto.' })
-  @ApiResponse({ status: 401, description: 'No autorizado.' })
-  @ApiResponse({ status: 404, description: 'Código CAI no encontrado.' })
-  @ApiParam({ name: 'id', description: 'ID único (UUID) del CAI a modificar' })
-  update(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateCaiDto: UpdateCaiDto,
-    @CurrentUser('id') userId: string,
-  ) {
-    return this.caiService.updateCai(id, updateCaiDto, userId);
-  }
-
-  @Patch('/:id/deactivate')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Desactivar o vencer un código CAI de forma lógica' })
-  @ApiParam({ name: 'id', description: 'ID único (UUID) del CAI a desactivar' })
-  @ApiResponse({ status: 200, description: 'Código CAI desactivado correctamente (is_active: false).' })
-  @ApiResponse({ status: 401, description: 'No autorizado.' })
-  @ApiResponse({ status: 404, description: 'Código CAI no encontrado.' })
-  deactivate(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser('id') userId: string,
-  ) {
-    return this.caiService.deactivateCai(id, userId);
   }
 }
