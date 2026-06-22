@@ -43,6 +43,7 @@ export class ClientsService {
       entities.CLIENTS,
       client.id,
       audit_action.CREATE,
+      client.name,
     );
     return client;
   }
@@ -128,6 +129,7 @@ export class ClientsService {
       entities.CLIENTS,
       id,
       audit_action.UPDATE,
+      client.name,
     );
     return client;
   }
@@ -143,6 +145,7 @@ export class ClientsService {
       entities.CLIENTS,
       id,
       audit_action.DEACTIVATE,
+      client.name,
     );
     return client;
   }

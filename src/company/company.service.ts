@@ -2,12 +2,17 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCompanyDto } from './create-company.dto';
 import { UpdateCompanyDto } from './update-company.dto';
+import { AuditService } from '../audit/audit.service';
+import { audit_action, entities } from '@prisma/client';
 
 @Injectable()
 export class CompanyService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) {}
 
-  async createCompany(dto: CreateCompanyDto) {
+  async createCompany(dto: CreateCompanyDto, userId: string) {
     if (dto.email) {
       const existingEmail = await this.prisma.company.findFirst({
         where: { email: dto.email },
@@ -22,7 +27,17 @@ export class CompanyService {
       throw new ConflictException('Ya existe un perfil de empresa registrado. Por favor, actualice el registro existente.');
     }
 
-    return this.prisma.company.create({ data: dto });
+    const company = await this.prisma.company.create({ data: dto });
+
+    await this.auditService.createLog(
+      userId,
+      entities.COMPANY,
+      company.id,
+      audit_action.CREATE,
+      company.name,
+    );
+
+    return company;
   }
 
   async getCompany() {
@@ -33,7 +48,7 @@ export class CompanyService {
     return company;
   }
 
-  async updateCompany(id: string, dto: UpdateCompanyDto) {
+  async updateCompany(id: string, dto: UpdateCompanyDto, userId: string) {
     const currentCompany = await this.prisma.company.findUnique({ where: { id } });
     if (!currentCompany) {
       throw new NotFoundException('No se encontró ningún perfil de empresa que coincida con este ID.');
@@ -46,9 +61,19 @@ export class CompanyService {
       }
     }
 
-    return this.prisma.company.update({
+    const company = await this.prisma.company.update({
       where: { id },
       data: dto,
     });
+
+    await this.auditService.createLog(
+      userId,
+      entities.COMPANY,
+      company.id,
+      audit_action.UPDATE,
+      company.name,
+    );
+
+    return company;
   }
 }

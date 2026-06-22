@@ -44,7 +44,12 @@ export class ProductsService {
       select: this.productSelect(),
     });
 
-    await this.createAuditLog(userId, product.id, audit_action.CREATE);
+    await this.createAuditLog(
+      userId,
+      product.id,
+      audit_action.CREATE,
+      product.name,
+    );
 
     return product;
   }
@@ -157,7 +162,12 @@ export class ProductsService {
       select: this.productSelect(),
     });
 
-    await this.createAuditLog(userId, id, audit_action.UPDATE);
+    await this.createAuditLog(
+      userId,
+      id,
+      audit_action.UPDATE,
+      product.name,
+    );
 
     return product;
   }
@@ -175,7 +185,12 @@ export class ProductsService {
       },
     });
 
-    await this.createAuditLog(userId, id, audit_action.DEACTIVATE);
+    await this.createAuditLog(
+      userId,
+      id,
+      audit_action.DEACTIVATE,
+      product.name,
+    );
 
     return product;
   }
@@ -216,7 +231,7 @@ export class ProductsService {
       select: this.stockSelect(),
     });
 
-    await this.createAuditLog(userId, id, audit_action.UPDATE);
+    await this.createAuditLog(userId, id, audit_action.UPDATE, product.name);
 
     return product;
   }
@@ -238,7 +253,12 @@ export class ProductsService {
       select: this.stockSelect(),
     });
 
-    await this.createAuditLog(userId, id, audit_action.UPDATE);
+    await this.createAuditLog(
+      userId,
+      id,
+      audit_action.UPDATE,
+      updatedProduct.name,
+    );
 
     return updatedProduct;
   }
@@ -256,7 +276,12 @@ export class ProductsService {
       select: this.stockSelect(),
     });
 
-    await this.createAuditLog(userId, id, audit_action.UPDATE);
+    await this.createAuditLog(
+      userId,
+      id,
+      audit_action.UPDATE,
+      updatedProduct.name,
+    );
 
     return updatedProduct;
   }
@@ -323,12 +348,14 @@ export class ProductsService {
     userId: string,
     entityId: string,
     action: audit_action,
+    detail?: string,
   ) {
     await this.auditService.createLog(
       userId,
       entities.PRODUCTS,
       entityId,
       action,
+      detail,
     );
   }
 

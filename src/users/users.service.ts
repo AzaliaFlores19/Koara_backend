@@ -52,6 +52,7 @@ export class UsersService {
       entities.USERS,
       user.id,
       audit_action.CREATE,
+      user.name,
     );
 
     return user;
@@ -115,6 +116,7 @@ export class UsersService {
         entities.USERS,
         id,
         audit_action.UPDATE,
+        updatedUser.name,
       );
 
       return updatedUser;
@@ -142,6 +144,7 @@ export class UsersService {
         entities.USERS,
         id,
         audit_action.DEACTIVATE,
+        user.name,
       );
 
       return user;
@@ -199,6 +202,7 @@ export class UsersService {
         entities.USERS,
         userId,
         audit_action.UPDATE,
+        updatedUser.name,
       );
 
       return updatedUser;
@@ -241,6 +245,7 @@ export class UsersService {
       entities.USERS,
       userId,
       audit_action.UPDATE,
+      'Cambio de contraseña',
     );
 
     return { message: 'Contraseña actualizada correctamente' };

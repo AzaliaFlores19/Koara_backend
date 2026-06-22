@@ -30,7 +30,7 @@ export class InvoicesService {
   }
 
   generateInvoiceNumber(baseCode: string, currentNumber: number) {
-    return `${baseCode}${currentNumber.toString().padStart(8, '0')}`;
+    return `${baseCode}-${currentNumber.toString().padStart(8, '0')}`;
   }
 
   async createInvoice(
@@ -158,6 +158,7 @@ export class InvoicesService {
         entities.INVOICES,
         invoice.id,
         audit_action.CREATE,
+        `Factura ${invoice.invoice_number}`,
       );
 
       const {
@@ -312,6 +313,7 @@ export class InvoicesService {
         entities.INVOICES,
         invoice.id,
         audit_action.DEACTIVATE,
+        `Factura ${invoice.invoice_number}`,
       );
 
       return deletedInvoice;

@@ -5,6 +5,7 @@ import { UpdateCompanyDto } from './update-company.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 @Controller('company')
@@ -20,8 +21,11 @@ export class CompanyController {
   @ApiResponse({ status: 201, description: 'Datos de la empresa registrados con éxito.' })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 400, description: 'Datos inválidos o empresa ya registrada.' })
-  create(@Body() createCompanyDto: CreateCompanyDto) {
-    return this.companyService.createCompany(createCompanyDto);
+  create(
+    @Body() createCompanyDto: CreateCompanyDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.companyService.createCompany(createCompanyDto, userId);
   }
 
   @Get()
@@ -44,7 +48,8 @@ export class CompanyController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCompanyDto: UpdateCompanyDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.companyService.updateCompany(id, updateCompanyDto);
+    return this.companyService.updateCompany(id, updateCompanyDto, userId);
   }
 }
