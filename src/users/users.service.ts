@@ -91,6 +91,17 @@ export class UsersService {
     updateUserDto: UpdateUserDto,
     userId: string,
   ): Promise<UserResponseDto> {
+    if (id === userId && updateUserDto.role) {
+      const currentUser = await this.prisma.users.findUnique({
+        where: { id },
+        select: { role: true },
+      });
+
+      if (currentUser && currentUser.role !== updateUserDto.role) {
+        throw new BadRequestException('No puedes editar tu propio rol');
+      }
+    }
+
     try {
       const data: Prisma.UsersUpdateInput = {};
 
@@ -132,6 +143,10 @@ export class UsersService {
   }
 
   async deactivate(id: string, userId: string): Promise<UserResponseDto> {
+    if (id === userId) {
+      throw new BadRequestException('No puedes desactivar tu propio usuario');
+    }
+
     try {
       const user = await this.prisma.users.update({
         where: { id },
