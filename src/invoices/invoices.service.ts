@@ -428,14 +428,14 @@ export class InvoicesService {
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Paleta de marca Koara (negro + rosa pastel).
-      const DARK = '#000000'; // negro de marca (sidebar / botones)
-      const PINK = '#F4B8D4'; // rosa primario (--color-koara-primary)
-      const PINK_DARK = '#D99EBD'; // rosa oscuro / acento (--color-koara-dark)
-      const GRAY = '#666666'; // texto secundario (--muted-foreground)
-      const LINE = '#EAD7E1'; // línea/borde rosado suave
-      const BOX = '#F6DEEB'; // fondo de cajas (--color-koara-bg)
-      const ZEBRA = '#FBF3F8'; // fondo de filas alternas (tinte rosa claro)
+      // Paleta en blanco y negro (escala de grises, sin color).
+      const DARK = '#000000'; // negro principal
+      const PINK = '#FFFFFF'; // texto/acento sobre fondo negro
+      const PINK_DARK = '#000000'; // etiquetas (negro)
+      const GRAY = '#555555'; // texto secundario (gris)
+      const LINE = '#999999'; // línea/borde gris
+      const BOX = '#F0F0F0'; // fondo de cajas (gris claro)
+      const ZEBRA = '#F5F5F5'; // fondo de filas alternas (gris muy claro)
 
       const pageW = doc.page.width;
       const left = doc.page.margins.left;
@@ -460,8 +460,8 @@ export class InvoicesService {
 
       // ===== Encabezado =====
       doc.rect(0, 0, pageW, 120).fill(DARK);
-      // Franja de acento rosa de marca bajo el encabezado.
-      doc.rect(0, 120, pageW, 5).fill(PINK);
+      // Franja de separación gris bajo el encabezado.
+      doc.rect(0, 120, pageW, 3).fill(GRAY);
       doc
         .fillColor('#FFFFFF')
         .font('Helvetica-Bold')
@@ -494,10 +494,25 @@ export class InvoicesService {
         .font('Helvetica-Bold')
         .fontSize(10)
         .fillColor(PINK)
-        .text(data.isPreview ? 'VISTA PREVIA' : 'ORIGINAL', right - 200, 74, {
-          width: 200,
-          align: 'right',
-        });
+        .text(
+          data.isPreview ? 'VISTA PREVIA' : 'ORIGINAL: CLIENTE',
+          right - 200,
+          74,
+          {
+            width: 200,
+            align: 'right',
+          },
+        );
+      if (!data.isPreview) {
+        doc
+          .font('Helvetica')
+          .fontSize(7)
+          .fillColor(PINK)
+          .text('Copia: Obligado tributario emisor', right - 200, 90, {
+            width: 200,
+            align: 'right',
+          });
+      }
 
       // ===== Cliente + Metadatos =====
       let y = 150;
@@ -661,7 +676,9 @@ export class InvoicesService {
       });
 
       // ===== Pie de página =====
-      const footerY = doc.page.height - 80;
+      // Se deja margen suficiente para que la última línea no rebase el
+      // margen inferior y PDFKit no inserte una página extra.
+      const footerY = doc.page.height - 95;
       doc
         .moveTo(left, footerY)
         .lineTo(right, footerY)
@@ -686,17 +703,23 @@ export class InvoicesService {
         if (
           typeof data.rangeStart === 'number' &&
           typeof data.rangeEnd === 'number'
-        )
-          parts.push(`Rango autorizado: ${data.rangeStart} - ${data.rangeEnd}`);
+        ) {
+          // El rango se muestra como un número de factura completo:
+          // prefijo (establecimiento-punto-tipo) + 8 dígitos del correlativo.
+          const dashAt = data.invoiceNumber?.lastIndexOf('-') ?? -1;
+          const prefix =
+            dashAt > 0 ? data.invoiceNumber!.slice(0, dashAt + 1) : '';
+          const fmtRange = (n: number) => prefix + String(n).padStart(8, '0');
+          parts.push(
+            `Rango autorizado: ${fmtRange(data.rangeStart)} - ${fmtRange(data.rangeEnd)}`,
+          );
+        }
         if (parts.length)
           doc.text(parts.join('   |   '), left, footerY + 8, {
             width,
             align: 'center',
+            lineBreak: false,
           });
-        doc.text('Gracias por su compra.', left, footerY + 22, {
-          width,
-          align: 'center',
-        });
       }
 
       // Marca de agua de vista previa (encima del contenido, sutil).
@@ -706,7 +729,7 @@ export class InvoicesService {
         doc
           .font('Helvetica-Bold')
           .fontSize(90)
-          .fillColor(PINK)
+          .fillColor(GRAY)
           .fillOpacity(0.18)
           .text('VISTA PREVIA', pageW / 2 - 320, doc.page.height / 2 - 50, {
             width: 640,
