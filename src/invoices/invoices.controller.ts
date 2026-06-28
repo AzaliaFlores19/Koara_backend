@@ -79,6 +79,21 @@ export class InvoicesController {
     return this.invoicesService.getTotalSalesByDateRange(startDate, endDate);
   }
 
+  @Get('/:id/pdf')
+  @Header('Content-Type', 'application/pdf')
+  @Header('Content-Disposition', 'inline; filename="factura.pdf"')
+  @ApiOperation({ summary: 'Generar el PDF imprimible de una factura emitida' })
+  @ApiResponse({
+    status: 200,
+    description: 'PDF de la factura generado con éxito.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Factura no encontrada' })
+  async print(@Param('id') id: string): Promise<StreamableFile> {
+    const buffer = await this.invoicesService.generateInvoicePdf(id);
+    return new StreamableFile(buffer);
+  }
+
   @Get('/:id')
   @ApiOperation({ summary: 'Obtener factura por ID' })
   @ApiResponse({ status: 200, description: 'Factura obtenida con éxito.' })
