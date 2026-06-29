@@ -51,7 +51,7 @@ async function main() {
   const adminUser = await prisma.users.create({
     data: {
       name: 'Ana Martínez',
-      email: 'admin@glamour.hn',
+      email: 'liaf21ramirez@gmail.com',
       phone: '+504 9999-1111',
       password: 'password_seguro_hash', // Cambiar por hash real
       role: 'ADMIN',

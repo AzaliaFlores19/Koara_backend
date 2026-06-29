@@ -37,6 +37,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Crear un nuevo producto' })
   @ApiResponse({ status: 201, description: 'Producto creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -130,6 +131,7 @@ export class ProductsController {
   }
 
   @Patch('/:id')
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Actualizar datos de un producto' })
   @ApiParam({ name: 'id', description: 'ID del producto' })
   @ApiResponse({
