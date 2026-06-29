@@ -711,16 +711,23 @@ export class InvoicesService {
           );
         }
         if (data.caiCode) parts.push(`CAI: ${data.caiCode}`);
-        if (data.caiExpiration)
-          parts.push(
-            `Fecha límite de emisión: ${fmtDate(data.caiExpiration, false)}`,
-          );
         if (parts.length)
           doc.text(parts.join('   |   '), left, footerY + 8, {
             width,
             align: 'center',
             lineBreak: false,
           });
+        if (data.caiExpiration)
+          doc.text(
+            `Fecha límite de emisión: ${fmtDate(data.caiExpiration, false)}`,
+            left,
+            footerY + 20,
+            {
+              width,
+              align: 'center',
+              lineBreak: false,
+            },
+          );
       }
 
       // Marca de agua de vista previa (encima del contenido, sutil).
