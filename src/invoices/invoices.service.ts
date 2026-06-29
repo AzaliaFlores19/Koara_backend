@@ -256,6 +256,7 @@ export class InvoicesService {
       where,
       include: {
         client: true,
+        user: { select: { id: true, name: true } },
       },
     });
   }
@@ -323,7 +324,7 @@ export class InvoicesService {
       where: { id },
       include: {
         invoice_items: { include: { product: true } },
-        user: false,
+        user: { select: { id: true, name: true } },
         cai_range: false,
       },
     });
