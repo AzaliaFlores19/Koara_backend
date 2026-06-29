@@ -696,11 +696,6 @@ export class InvoicesService {
         );
       } else {
         const parts: string[] = [];
-        if (data.caiCode) parts.push(`CAI: ${data.caiCode}`);
-        if (data.caiExpiration)
-          parts.push(
-            `Fecha límite de emisión: ${fmtDate(data.caiExpiration, false)}`,
-          );
         if (
           typeof data.rangeStart === 'number' &&
           typeof data.rangeEnd === 'number'
@@ -715,6 +710,11 @@ export class InvoicesService {
             `Rango autorizado: ${fmtRange(data.rangeStart)} - ${fmtRange(data.rangeEnd)}`,
           );
         }
+        if (data.caiCode) parts.push(`CAI: ${data.caiCode}`);
+        if (data.caiExpiration)
+          parts.push(
+            `Fecha límite de emisión: ${fmtDate(data.caiExpiration, false)}`,
+          );
         if (parts.length)
           doc.text(parts.join('   |   '), left, footerY + 8, {
             width,
