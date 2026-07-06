@@ -166,6 +166,37 @@ export class CaiService {
       return { cai: caiResult, range: rangeResult };
     });
   }
+
+  async deactivateRange(rangeId: string, userId: string) {
+    return await this.prisma.$transaction(async (tx) => {
+      const range = await tx.cAI_Range.findUnique({
+        where: { id: rangeId },
+        include: { cai: true },
+      });
+
+      if (!range || !range.is_active) return;
+
+      await tx.cAI_Range.update({
+        where: { id: rangeId },
+        data: { is_active: false },
+      });
+
+      if (range.cai_id) {
+        await tx.cAI.update({
+          where: { id: range.cai_id },
+          data: { is_active: false },
+        });
+      }
+
+      await this.auditService.createLog(
+        userId,
+        entities.CAI_RANGE,
+        rangeId,
+        audit_action.DEACTIVATE,
+        `Rango desactivado automáticamente por límite de facturas o fecha de expiración`,
+      );
+    });
+  }
 }
 
  

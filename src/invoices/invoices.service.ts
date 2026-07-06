@@ -9,6 +9,7 @@ import { InvoiceItemsService } from './invoice-items.service';
 import { entities, audit_action, Prisma } from '@prisma/client';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { InvoiceFiltersDto } from './dto/invoice-filters.dto';
+import { CaiService } from '../cai/cai.service';
 import PDFDocument from 'pdfkit';
 
 interface InvoicePdfItem {
@@ -46,13 +47,13 @@ interface InvoicePdfData {
   taxes: number;
   total: number;
 }
-
 @Injectable()
 export class InvoicesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
     private readonly invoiceItemsService: InvoiceItemsService,
+    private readonly caiService: CaiService,
   ) {}
 
   calculateTotal(items: { item_subtotal: Prisma.Decimal }[], taxRate: number) {
@@ -95,12 +96,14 @@ export class InvoicesService {
       if (!client) throw new NotFoundException('Cliente no encontrado');
 
       if (caiRange.current_invoice_number > caiRange.range_end) {
+        await this.caiService.deactivateRange(caiRange.id, userId);
         throw new BadRequestException(
-          'El Rango CAI ha alcanzado su límite de facturas',
+          'El Rango CAI ha alcanzado su límite de facturas y ha sido desactivado automáticamente',
         );
       }
       if (new Date() > new Date(caiRange.expiration_date)) {
-        throw new BadRequestException('El Rango CAI ha expirado');
+        await this.caiService.deactivateRange(caiRange.id, userId);
+        throw new BadRequestException('El Rango CAI ha expirado y ha sido desactivado automáticamente');
       }
       let invoice_number = '';
 
