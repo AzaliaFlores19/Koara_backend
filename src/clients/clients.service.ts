@@ -20,13 +20,6 @@ export class ClientsService {
   ) {}
 
   async create(dto: CreateClientDto, user_id: string) {
-    if (dto.rtn) {
-      const existing = await this.prisma.clients.findUnique({
-        where: { rtn: dto.rtn },
-      });
-      if (existing) throw new ConflictException('El RTN ya está registrado.');
-    }
-
     if (dto.email) {
       const existing = await this.prisma.clients.findUnique({
         where: { email: dto.email },
@@ -101,14 +94,6 @@ export class ClientsService {
 
   async update(id: string, dto: UpdateClientDto, user_id: string) {
     await this.findById(id);
-
-    if (dto.rtn) {
-      const duplicate = await this.prisma.clients.findFirst({
-        where: { rtn: dto.rtn, id: { not: id } },
-      });
-      if (duplicate)
-        throw new ConflictException('El RTN ya está en uso por otro cliente.');
-    }
 
     if (dto.email) {
       const duplicate = await this.prisma.clients.findFirst({

@@ -554,8 +554,8 @@ export class InvoicesService {
         });
       const clientLines: string[] = [];
       if (data.client.rtn) clientLines.push(`RTN: ${data.client.rtn}`);
-      if (data.client.phone) clientLines.push(`Tel: ${data.client.phone}`);
-      if (data.client.email) clientLines.push(data.client.email);
+      if (data.client.phone) clientLines.push(`TEL: ${data.client.phone}`);
+      if (data.client.email) clientLines.push(`CORREO: ${data.client.email}`);
       doc
         .font('Helvetica')
         .fontSize(9)
