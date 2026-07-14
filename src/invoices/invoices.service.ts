@@ -389,6 +389,17 @@ export class InvoicesService {
 
     if (!invoice) throw new NotFoundException('Factura no encontrada');
 
+    const itemIds = invoice.invoice_items.map((it) => it.id);
+    const logs = await this.prisma.audit_Logs.findMany({
+      where: {
+        entity_id: { in: itemIds },
+        entity: entities.INVOICE_PRODUCTS,
+        action: audit_action.CREATE,
+      },
+    });
+
+    const logMap = new Map(logs.map((l) => [l.entity_id, l.detail]));
+
     const company = await this.prisma.company.findFirst();
 
     return this.buildInvoicePdf({
@@ -407,12 +418,22 @@ export class InvoicesService {
         email: invoice.client_email,
       },
       paymentMethod: invoice.payment_method,
-      items: invoice.invoice_items.map((it) => ({
-        name: it.product?.name ?? 'Producto',
-        quantity: it.quantity,
-        unitPrice: it.unit_price?.toNumber() ?? 0,
-        subtotal: it.item_subtotal?.toNumber() ?? 0,
-      })),
+      items: invoice.invoice_items.map((it) => {
+        let name = it.product?.name ?? 'Producto';
+        const detail = logMap.get(it.id);
+        if (detail) {
+          const lastXIndex = detail.lastIndexOf(' x');
+          if (lastXIndex !== -1) {
+            name = detail.substring(0, lastXIndex);
+          }
+        }
+        return {
+          name,
+          quantity: it.quantity,
+          unitPrice: it.unit_price?.toNumber() ?? 0,
+          subtotal: it.item_subtotal?.toNumber() ?? 0,
+        };
+      }),
       subtotal: invoice.subtotal.toNumber(),
       taxes: invoice.taxes.toNumber(),
       total: invoice.total.toNumber(),
