@@ -26,15 +26,6 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @Post('register')
-  @ApiOperation({ summary: 'Registrar nuevo usuario' })
-  @ApiResponse({ status: 201, description: 'Usuario registrado con éxito.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
-  }
-
   @Post('forgot-password')
   @ApiOperation({ summary: 'Solicitar restablecimiento de contraseña' })
   @ApiResponse({

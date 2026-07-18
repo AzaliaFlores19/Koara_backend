@@ -11,7 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuditService } from '../audit/audit.service';
-import { audit_action, entities } from '@prisma/client';
+import { audit_action, entities, roles } from '@prisma/client';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { PasswordResetMailService } from './password-reset-mail.service';
@@ -102,7 +102,7 @@ export class AuthService {
         email: registerDto.email,
         password: hashedPassword,
         phone: registerDto.phone,
-        role: registerDto.role,
+        role: roles.EMPLOYEE, 
       },
     });
 

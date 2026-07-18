@@ -40,12 +40,4 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   phone?: string;
-
-  @ApiProperty({
-    description: 'Rol del usuario',
-    example: 'EMPLOYEE',
-  })
-  @IsEnum(roles, { message: 'El rol debe ser ADMIN o EMPLOYEE' })
-  @IsNotEmpty({ message: 'El rol es obligatorio' })
-  role: roles;
 }
