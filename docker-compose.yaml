@@ -2,6 +2,7 @@ services:
   db:
     image: docker.io/postgres:15-alpine
     container_name: koara_db_container
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -10,19 +11,38 @@ services:
       - '4001:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrate
+    container_name: koara_migrate_container
+    env_file: .env
+    environment:
+      RUN_SEED: 'true'
+    depends_on:
+      db:
+        condition: service_healthy
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
     container_name: koara_backend_container
+    restart: unless-stopped
     env_file: .env
     ports:
       - '4000:4000'
-    expose:
-      - '4000'
     depends_on:
-      - db
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:
