@@ -7,14 +7,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: [   
-      'http://localhost:3000', 
-      'http://localhost:3001',  
-      process.env.FRONTEND_URL, 
+    origin: [
+      'https://koara-management.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      process.env.FRONTEND_URL,
     ].filter(Boolean) as string[],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,           
-    allowedHeaders: 'Content-Type, Accept, Authorization', 
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
   app.useGlobalPipes(
@@ -37,7 +38,7 @@ async function bootstrap() {
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-   
+
     if (document.paths) {
       Object.keys(document.paths).forEach((path) => {
         const methods = document.paths[path];
@@ -46,7 +47,8 @@ async function bootstrap() {
             methods[method].responses = {};
           }
           methods[method].responses['500'] = {
-            description: 'Error interno del servidor. Ocurrió un error inesperado al procesar la solicitud.',
+            description:
+              'Error interno del servidor. Ocurrió un error inesperado al procesar la solicitud.',
           };
         });
       });
